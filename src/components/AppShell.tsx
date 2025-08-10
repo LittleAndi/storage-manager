@@ -8,7 +8,6 @@ const navLinks = [
   { href: "/spaces", label: "Spaces" },
   { href: "/spaces/new", label: "New Space" },
   { href: "/profile", label: "Profile" },
-  { href: "/auth", label: "Auth" },
   { href: "/bulk", label: "Bulk Operations" },
   { href: "/scan", label: "Scan QR" },
 ];
