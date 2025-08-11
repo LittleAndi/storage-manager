@@ -12,8 +12,16 @@ const Auth: React.FC = () => {
       alert('Google sign-in failed: ' + error.message);
     }
   };
-  const handleFacebookLogin = () => {
-    alert("Facebook login not yet implemented.");
+  const handleFacebookLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'facebook',
+      options: {
+        redirectTo: window.location.origin,
+      }
+    });
+    if (error) {
+      alert('Facebook sign-in failed: ' + error.message);
+    }
   };
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
