@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "postbuild": "cpx staticwebapp.config.json dist/",
     "lint": "eslint .",
     "preview": "vite preview"
   },
