@@ -1,3 +1,4 @@
+import { type JSX } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { useAuthStore } from './state/authStore';
 import Dashboard from './pages/Dashboard';

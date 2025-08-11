@@ -9,7 +9,7 @@ export interface BoxCardProps {
   onOpen?: () => void;
 }
 
-const BoxCard: React.FC<BoxCardProps> = ({ id, name, location, itemCount, thumbnailUrl, onOpen }) => (
+const BoxCard: React.FC<BoxCardProps> = ({ id: _id, name, location, itemCount, thumbnailUrl, onOpen }) => (
   <div className="bg-white rounded shadow p-4 flex items-center cursor-pointer" onClick={onOpen} aria-label={`Open box ${name}`}>
     {thumbnailUrl && <img src={thumbnailUrl} alt={name} className="w-12 h-12 rounded mr-4" />}
     <div className="flex-1">
