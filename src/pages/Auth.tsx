@@ -26,7 +26,8 @@ const Auth: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
       <div className="w-full max-w-sm bg-white rounded shadow p-6">
-        <h1 className="text-2xl font-bold mb-6 text-center">Sign In</h1>
+        <h1 className="text-2xl font-bold mb-2 text-center">Sign In / Sign Up</h1>
+        <h2 className="text-1xl mb-6 text-center">Get started organizing your storage spaces</h2>
         <button
           className="w-full flex items-center justify-center gap-2 py-2 px-4 mb-4 border rounded bg-gray-100 hover:bg-gray-200"
           onClick={handleGoogleLogin}
