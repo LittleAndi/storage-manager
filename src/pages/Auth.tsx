@@ -12,13 +12,22 @@ const Auth: React.FC = () => {
       alert('Google sign-in failed: ' + error.message);
     }
   };
-  const handleFacebookLogin = () => {
-    alert("Facebook login not yet implemented.");
+  const handleFacebookLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'facebook',
+      options: {
+        redirectTo: window.location.origin,
+      }
+    });
+    if (error) {
+      alert('Facebook sign-in failed: ' + error.message);
+    }
   };
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
       <div className="w-full max-w-sm bg-white rounded shadow p-6">
-        <h1 className="text-2xl font-bold mb-6 text-center">Sign In</h1>
+        <h1 className="text-2xl font-bold mb-2 text-center">Sign In / Sign Up</h1>
+        <h2 className="text-1xl mb-6 text-center">Get started organizing your storage spaces</h2>
         <button
           className="w-full flex items-center justify-center gap-2 py-2 px-4 mb-4 border rounded bg-gray-100 hover:bg-gray-200"
           onClick={handleGoogleLogin}
@@ -35,15 +44,6 @@ const Auth: React.FC = () => {
           <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#1877F2" d="M24 0C10.745 0 0 10.745 0 24c0 12.02 8.805 21.92 20.205 23.74V31.09h-6.08v-7.09h6.08v-5.41c0-6.02 3.66-9.34 9.13-9.34 2.64 0 5.41.47 5.41.47v5.96h-3.05c-3.01 0-3.95 1.87-3.95 3.79v4.53h6.72l-1.07 7.09h-5.65v16.65C39.195 45.92 48 36.02 48 24 48 10.745 37.255 0 24 0z"/></svg>
           Sign in with Facebook
         </button>
-        <div className="text-center text-sm text-gray-500 mb-2">or use your email address</div>
-        <form className="space-y-4">
-          <input type="email" className="w-full p-2 border rounded" placeholder="Email address" required aria-label="Email address" />
-          <input type="password" className="w-full p-2 border rounded" placeholder="Password" required aria-label="Password" />
-          <button type="submit" className="w-full py-2 px-4 bg-gray-900 text-white rounded hover:bg-gray-800">Sign In</button>
-        </form>
-        <div className="mt-4 text-center">
-          <a href="#" className="text-blue-600 hover:underline text-sm">Forgot password?</a>
-        </div>
       </div>
     </div>
   );
