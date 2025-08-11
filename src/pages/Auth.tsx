@@ -1,10 +1,13 @@
-
-
 import { supabase } from '../supabaseClient';
 
 const Auth: React.FC = () => {
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin, // Ensures redirect matches your deployed site
+      },
+    });
     if (error) {
       alert('Google sign-in failed: ' + error.message);
     }
