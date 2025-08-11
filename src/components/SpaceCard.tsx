@@ -10,7 +10,7 @@ export interface SpaceCardProps {
   onOpen?: () => void;
 }
 
-const SpaceCard: React.FC<SpaceCardProps> = ({ id, name, location, memberCount, owner, thumbnailUrl, onOpen }) => (
+const SpaceCard: React.FC<SpaceCardProps> = ({ id: _id, name, location, memberCount, owner, thumbnailUrl, onOpen }) => (
   <div className="bg-white rounded shadow p-4 flex items-center cursor-pointer" onClick={onOpen} aria-label={`Open space ${name}`}>
     {thumbnailUrl && <img src={thumbnailUrl} alt={name} className="w-16 h-16 rounded mr-4" />}
     <div className="flex-1">
