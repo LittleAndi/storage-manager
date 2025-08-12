@@ -1,4 +1,3 @@
-
 import React from "react";
 import AppShell from "../components/AppShell";
 import { useAuthStore } from "../state/authStore";
@@ -12,7 +11,7 @@ const Profile: React.FC = () => {
     <AppShell>
       <h1 className="text-2xl font-bold mb-4">User Profile</h1>
       {user ? (
-        <Card className="max-w-md mx-auto">
+        <Card className="w-full max-w-md mb-4">
           <CardContent className="p-6">
             <div className="flex items-center gap-4 mb-4">
               <Avatar className="h-16 w-16">
