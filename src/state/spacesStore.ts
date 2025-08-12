@@ -7,6 +7,8 @@ export interface Space {
   memberCount?: number;
   owner?: string;
   thumbnailUrl?: string;
+  created?: number;
+  modified?: number;
 }
 
 interface SpacesState {
@@ -36,11 +38,25 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
   addSpace: (space) => {
     const raw = localStorage.getItem("spaces");
     const existingSpaces: Space[] = raw ? JSON.parse(raw) : [];
-    const updated = [...existingSpaces, space];
+    const now = Date.now();
+    const newSpace: Space = {
+      ...space,
+      created: now,
+      modified: now,
+    };
+    const updated = [...existingSpaces, newSpace];
     set({ spaces: updated });
     localStorage.setItem("spaces", JSON.stringify(updated));
   },
   updateSpace: (space) =>
-    set({ spaces: get().spaces.map((s) => (s.id === space.id ? space : s)) }),
-  removeSpace: (id) => set({ spaces: get().spaces.filter((s) => s.id !== id) }),
+    set({
+      spaces: get().spaces.map((s) =>
+        s.id === space.id ? { ...space, modified: Date.now() } : s
+      ),
+    }),
+  removeSpace: (id) => {
+    const updated = get().spaces.filter((s) => s.id !== id);
+    set({ spaces: updated });
+    localStorage.setItem("spaces", JSON.stringify(updated));
+  },
 }));
