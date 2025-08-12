@@ -26,14 +26,20 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
   fetchSpaces: async () => {
     set({ loading: true, error: null });
     try {
-      // TODO: Replace with API call
-      const spaces: Space[] = [];
-      set({ spaces, loading: false });
+      const raw = localStorage.getItem("spaces");
+      const spaces: Space[] = raw ? JSON.parse(raw) : [];
+      set({ spaces: spaces, loading: false });
     } catch (e: any) {
       set({ error: e.message, loading: false });
     }
   },
-  addSpace: (space) => set({ spaces: [...get().spaces, space] }),
+  addSpace: (space) => {
+    const raw = localStorage.getItem("spaces");
+    const existingSpaces: Space[] = raw ? JSON.parse(raw) : [];
+    const updated = [...existingSpaces, space];
+    set({ spaces: updated });
+    localStorage.setItem("spaces", JSON.stringify(updated));
+  },
   updateSpace: (space) =>
     set({ spaces: get().spaces.map((s) => (s.id === space.id ? space : s)) }),
   removeSpace: (id) => set({ spaces: get().spaces.filter((s) => s.id !== id) }),
