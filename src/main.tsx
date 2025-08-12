@@ -23,6 +23,7 @@ function Root() {
           name: supabaseUser.user_metadata?.name || supabaseUser.email || '',
           email: supabaseUser.email || '',
           roles: [],
+          avatarUrl: supabaseUser.user_metadata?.avatar_url || '',
         };
       }
       setUser(userProfile);

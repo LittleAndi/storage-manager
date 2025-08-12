@@ -5,6 +5,7 @@ interface UserProfile {
   name: string;
   email: string;
   roles: string[];
+  avatarUrl?: string;
 }
 
 interface AuthState {
