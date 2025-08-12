@@ -1,6 +1,9 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
 import { useAuthStore } from '../state/authStore';
 import { supabase } from '../supabaseClient';
 
@@ -14,7 +17,6 @@ const navLinks = [
 ];
 
 const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const setToken = useAuthStore((state) => state.setToken);
@@ -23,6 +25,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     await supabase.auth.signOut();
     setUser(null);
     setToken(null);
+    toast.success("Logged out successfully");
   };
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -30,32 +33,58 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <span className="font-bold text-lg">Storage Manager</span>
         <div className="flex items-center gap-4">
           {user && (
-            <span className="text-sm font-semibold" aria-label="Logged in user name">{user.name || user.email}</span>
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user.avatarUrl || undefined} alt={user.name || user.email} />
+                <AvatarFallback>{(user.name || user.email)?.[0]?.toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <span className="text-sm font-semibold" aria-label="Logged in user name">{user.name || user.email}</span>
+            </div>
           )}
-          <Button
-            className="md:hidden px-3 py-2 rounded bg-gray-800"
-            aria-label="Open navigation menu"
-            onClick={() => setSidebarOpen(true)}
-            variant="ghost"
-          >
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-          </Button>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                className="md:hidden"
+                aria-label="Open navigation menu"
+                variant="ghost"
+              >
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0">
+              <nav className="p-4">
+                <ul className="space-y-2">
+                  {navLinks.map(link => (
+                    <li key={link.href}>
+                      <a href={link.href} className="block px-3 text-gray-900 hover:bg-gray-100 rounded">{link.label}</a>
+                    </li>
+                  ))}
+                  {user && (
+                    <li>
+                      <Button
+                        onClick={handleLogout}
+                        aria-label="Logout"
+                        variant="destructive"
+                        className="w-full mt-8"
+                      >
+                        Logout
+                      </Button>
+                    </li>
+                  )}
+                </ul>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
       <div className="flex flex-1">
-        {/* Mobile sidebar overlay */}
-        {sidebarOpen && (
-          <div className="fixed inset-0 z-40 bg-black bg-opacity-30 md:hidden" onClick={() => setSidebarOpen(false)}></div>
-        )}
-        <aside
-          className={`fixed z-50 top-0 left-0 h-full w-64 bg-white shadow-lg p-4 flex flex-col justify-between transform transition-transform duration-200 md:static md:translate-x-0 md:block ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
-          aria-label="Sidebar navigation"
-        >
+        {/* Desktop sidebar */}
+  <aside className="hidden md:flex md:flex-col md:w-64 bg-white shadow-lg p-4">
           <nav>
             <ul className="space-y-2">
               {navLinks.map(link => (
                 <li key={link.href}>
-                  <a href={link.href} className="block py-2 px-3 rounded hover:bg-gray-200 text-gray-900" onClick={() => setSidebarOpen(false)}>{link.label}</a>
+                  <a href={link.href} className="block py-2 px-3 rounded hover:bg-gray-200 text-gray-900">{link.label}</a>
                 </li>
               ))}
               {user && (
