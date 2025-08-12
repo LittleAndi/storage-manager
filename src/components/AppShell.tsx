@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { useAuthStore } from '../state/authStore';
 import { supabase } from '../supabaseClient';
 
@@ -31,13 +32,14 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {user && (
             <span className="text-sm font-semibold" aria-label="Logged in user name">{user.name || user.email}</span>
           )}
-          <button
+          <Button
             className="md:hidden px-3 py-2 rounded bg-gray-800"
             aria-label="Open navigation menu"
             onClick={() => setSidebarOpen(true)}
+            variant="ghost"
           >
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-          </button>
+          </Button>
         </div>
       </header>
       <div className="flex flex-1">
@@ -58,13 +60,14 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               ))}
               {user && (
                 <li>
-                  <button
-                    className="w-full mt-8 px-3 py-2 rounded bg-red-600 text-white text-sm hover:bg-red-700"
+                  <Button
                     onClick={handleLogout}
                     aria-label="Logout"
+                    variant="destructive"
+                    className="w-full mt-8"
                   >
                     Logout
-                  </button>
+                  </Button>
                 </li>
               )}
             </ul>
