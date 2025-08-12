@@ -10,7 +10,6 @@ import { supabase } from '../supabaseClient';
 const navLinks = [
   { href: "/", label: "Dashboard" },
   { href: "/spaces", label: "Spaces" },
-  { href: "/spaces/new", label: "New Space" },
   { href: "/profile", label: "Profile" },
   { href: "/bulk", label: "Bulk Operations" },
   { href: "/scan", label: "Scan QR" },

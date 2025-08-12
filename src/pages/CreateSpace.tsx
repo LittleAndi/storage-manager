@@ -54,68 +54,67 @@ const CreateSpace: React.FC = () => {
 
   return (
     <AppShell>
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Create Storage Space</CardTitle>
-          </CardHeader>
-          <Form {...form}>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <CardContent className="space-y-4">
-                <FormField
-                  name="name"
-                  render={({ field, fieldState }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="name">Name</FormLabel>
-                      <FormControl>
-                        <Input id="name" type="text" {...field} aria-label="Space name" />
-                      </FormControl>
-                      {fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  name="location"
-                  render={({ field, fieldState }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="location">Location</FormLabel>
-                      <FormControl>
-                        <Input id="location" type="text" {...field} aria-label="Location" />
-                      </FormControl>
-                      {fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  name="photo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="photo">Photo (optional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="photo"
-                          type="file"
-                          aria-label="Photo upload"
-                          accept="image/*"
-                          onChange={e => {
-                            field.onChange(e.target.files?.[0] ?? undefined);
-                          }}
-                          ref={field.ref}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-              <CardFooter>
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Creating..." : "Create Space"}
-                </Button>
-              </CardFooter>
-            </form>
-          </Form>
-        </Card>
-      </div>
+      <h1 className="text-2xl font-bold mb-4">Create Storage Space</h1>
+      <Card className="w-full max-w-md mb-4">
+        <CardHeader>
+          <CardTitle>New Storage Space</CardTitle>
+        </CardHeader>
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <CardContent className="space-y-4">
+              <FormField
+                name="name"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="name">Name</FormLabel>
+                    <FormControl>
+                      <Input id="name" type="text" {...field} aria-label="Space name" />
+                    </FormControl>
+                    {fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="location"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="location">Location</FormLabel>
+                    <FormControl>
+                      <Input id="location" type="text" {...field} aria-label="Location" />
+                    </FormControl>
+                    {fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="photo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="photo">Photo (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="photo"
+                        type="file"
+                        aria-label="Photo upload"
+                        accept="image/*"
+                        onChange={e => {
+                          field.onChange(e.target.files?.[0] ?? undefined);
+                        }}
+                        ref={field.ref}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+            <CardFooter>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create Space"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </Card>
     </AppShell>
   );
 };
