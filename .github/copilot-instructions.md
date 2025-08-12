@@ -67,6 +67,65 @@ npm run dev
 
 For more details, see the [official Tailwind CSS Vite guide](https://tailwindcss.com/docs/installation/using-vite).
 
+## **Using shadcn/ui with Vite**
+
+To add shadcn/ui to your Vite + React + Tailwind project:
+
+1. **Run the shadcn/ui init command:**
+
+   ```bash
+   npx shadcn@latest init
+   ```
+
+   This sets up `components.json` and asks you a few configuration questions.
+
+2. **Add a component:**
+
+   ```bash
+   npx shadcn@latest add button
+   ```
+
+   This will add the Button component to your project.
+
+3. **Import and use the component:**
+   Example usage in your app:
+
+   ```jsx
+   import { Button } from "@/components/ui/button";
+
+   function App() {
+     return (
+       <div className="flex min-h-svh flex-col items-center justify-center">
+         <Button>Click me</Button>
+       </div>
+     );
+   }
+   ```
+
+4. **(Optional) Configure path aliases:**
+   Add the following to your `tsconfig.json` and `tsconfig.app.json`:
+   ```json
+   "compilerOptions": {
+     "baseUrl": ".",
+     "paths": {
+       "@/*": ["./src/*"]
+     }
+   }
+   ```
+   And in your `vite.config.ts`:
+   ```js
+   import path from "path";
+   // ...existing code...
+   resolve: {
+     alias: {
+       "@": path.resolve(__dirname, "./src"),
+     },
+   },
+   // ...existing code...
+   ```
+
+For more details, see the [official shadcn/ui Vite guide](https://ui.shadcn.com/docs/installation/vite).
+
 ## **Key Workflows**
 
 ### **Development**
