@@ -33,10 +33,10 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {user && (
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.avatarUrl || undefined} alt={user.name || user.email} />
-                <AvatarFallback>{(user.name || user.email)?.[0]?.toUpperCase()}</AvatarFallback>
+                <AvatarImage src={user.avatar_url || undefined} alt={user.full_name || user.email} />
+                <AvatarFallback>{(user.full_name || user.email)?.[0]?.toUpperCase()}</AvatarFallback>
               </Avatar>
-              <span className="text-sm font-semibold" aria-label="Logged in user name">{user.name || user.email}</span>
+              <span className="text-sm font-semibold" aria-label="Logged in user name">{user.full_name || user.email}</span>
             </div>
           )}
           <Sheet>

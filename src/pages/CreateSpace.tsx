@@ -42,9 +42,9 @@ const CreateSpace: React.FC = () => {
       id: Math.random().toString(36).slice(2), // simple unique id
       name: data.name,
       location: data.location,
-      thumbnailUrl: typeof data.photo === "string" ? data.photo : undefined,
+      thumbnail_Url: typeof data.photo === "string" ? data.photo : undefined,
       memberCount: 1,
-      owner: useAuthStore.getState().user?.name || "You",
+      owner_id: useAuthStore.getState().user?.full_name || "You",
     };
     addSpace(newSpace);
     toast.success("Space created successfully!");
