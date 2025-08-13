@@ -16,6 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useSpacesStore } from "@/state/spacesStore";
+import type { NewSpace } from "@/types/entities";
 import { useAuthStore } from "@/state/authStore";
 import { useNavigate } from "react-router-dom";
 
@@ -37,19 +38,23 @@ const CreateSpace: React.FC = () => {
   const addSpace = useSpacesStore(state => state.addSpace);
 
   const onSubmit = async (data: FormData) => {
-    // Save to local state
-    const newSpace = {
-      id: Math.random().toString(36).slice(2), // simple unique id
+    // Save to local state and Supabase
+    const owner_id = useAuthStore.getState().user!.id;
+    const newSpace: NewSpace = {
       name: data.name,
       location: data.location,
-      thumbnail_Url: typeof data.photo === "string" ? data.photo : undefined,
+      thumbnail_url: typeof data.photo === "string" ? data.photo : undefined,
       memberCount: 1,
-      owner_id: useAuthStore.getState().user?.full_name || "You",
+      owner_id,
     };
-    addSpace(newSpace);
-    toast.success("Space created successfully!");
-    reset();
-    navigate(`/spaces/${newSpace.id}`);
+    const id = await addSpace(newSpace);
+    if (id) {
+      toast.success("Space created successfully!");
+      reset();
+      navigate(`/spaces/${id}`);
+    } else {
+      toast.error("Failed to create space.");
+    }
   };
 
   return (

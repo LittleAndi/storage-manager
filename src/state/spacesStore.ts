@@ -1,12 +1,16 @@
 import { create } from "zustand";
-import type { Space } from "@/types/entities";
+import { supabase } from "@/supabaseClient";
+import type { NewSpace, Space } from "@/types/entities";
+import { newSpaceToDbSpace } from "@/lib/mappers";
 
 interface SpacesState {
   spaces: Space[];
   loading: boolean;
   error: string | null;
   fetchSpaces: () => Promise<void>;
-  addSpace: (space: Space) => void;
+  addSpace: (
+    space: NewSpace,
+  ) => Promise<string | null>;
   updateSpace: (space: Space) => void;
   removeSpace: (id: string) => void;
 }
@@ -25,18 +29,29 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
       set({ error: e.message, loading: false });
     }
   },
-  addSpace: (space) => {
+  addSpace: async (space) => {
     const raw = localStorage.getItem("spaces");
     const existingSpaces: Space[] = raw ? JSON.parse(raw) : [];
     const now = new Date(Date.now()).toISOString();
+    // Use mapper for NewSpace to DB Insert type
+    const dbInsert = newSpaceToDbSpace(space, now);
+    const { data, error } = await supabase.from("spaces").insert(dbInsert)
+      .select();
+    if (error || !data || !data[0]?.id) {
+      set({ error: error?.message || "Failed to create space" });
+      console.error(error?.message);
+      return null;
+    }
     const newSpace: Space = {
       ...space,
+      id: data[0].id,
       created_at: now,
       modified_at: now,
     };
     const updated = [...existingSpaces, newSpace];
     set({ spaces: updated });
     localStorage.setItem("spaces", JSON.stringify(updated));
+    return data[0].id;
   },
   updateSpace: (space) =>
     set({

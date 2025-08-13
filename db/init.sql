@@ -52,136 +52,121 @@ ALTER TABLE space_members ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 
--- Spaces: owner or shared member can SELECT
-CREATE POLICY "Spaces: owner or shared member"
+-- Helper function
+CREATE OR REPLACE FUNCTION is_space_owner(space_id uuid, user_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM spaces
+    WHERE id = space_id
+      AND owner_id = user_id
+  );
+$$;
+
+-- Spaces: owners and members can read
+CREATE POLICY "Spaces: owners and members can read"
   ON spaces
-  FOR SELECT USING (
+  FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM space_members
+      WHERE space_members.space_id = spaces.id
+        AND space_members.user_id = auth.uid()
+    )
+  );
+
+-- Spaces: only owner can create
+CREATE POLICY "Spaces: only owner can insert"
+  ON spaces
+  FOR INSERT
+  WITH CHECK (
     owner_id = auth.uid()
-    OR EXISTS (
+  );
+
+-- Spaces: only owner can delete
+CREATE POLICY "Spaces: only owner can delete"
+  ON spaces
+  FOR DELETE
+  USING (
+    owner_id = auth.uid()
+  );
+
+-- Spaces: members can update
+CREATE POLICY "Spaces: members can update"
+  ON spaces
+  FOR UPDATE
+  USING (
+    EXISTS (
       SELECT 1 FROM space_members
       WHERE space_members.space_id = spaces.id
         AND space_members.user_id = auth.uid()
     )
   );
 
--- Spaces: owner or shared member can INSERT, UPDATE, DELETE
-CREATE POLICY "Spaces: owner or shared member can modify"
-  ON spaces
-  FOR ALL USING (
-    owner_id = auth.uid()
-    OR EXISTS (
+-- Boxes: members can read
+CREATE POLICY "Boxes: members can read"
+  ON boxes
+  FOR SELECT
+  USING (
+    EXISTS (
       SELECT 1 FROM space_members
-      WHERE space_members.space_id = spaces.id
+      WHERE space_members.space_id = boxes.space_id
         AND space_members.user_id = auth.uid()
     )
   );
 
--- Boxes: user can access if they have access to the parent space
-CREATE POLICY "Boxes: user can access if space is accessible"
+-- Boxes: members can modify
+CREATE POLICY "Boxes: members can modify"
   ON boxes
-  FOR SELECT USING (
+  FOR ALL
+  USING (
     EXISTS (
-      SELECT 1 FROM spaces
-      WHERE spaces.id = boxes.space_id
-        AND (
-          spaces.owner_id = auth.uid()
-          OR EXISTS (
-            SELECT 1 FROM space_members
-            WHERE space_members.space_id = boxes.space_id
-              AND space_members.user_id = auth.uid()
-          )
-        )
+      SELECT 1 FROM space_members
+      WHERE space_members.space_id = boxes.space_id
+        AND space_members.user_id = auth.uid()
     )
   );
 
--- Boxes: owner or shared member can INSERT, UPDATE, DELETE
-CREATE POLICY "Boxes: owner or shared member can modify"
-  ON boxes
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM spaces
-      WHERE spaces.id = boxes.space_id
-        AND (
-          spaces.owner_id = auth.uid()
-          OR EXISTS (
-            SELECT 1 FROM space_members
-            WHERE space_members.space_id = boxes.space_id
-              AND space_members.user_id = auth.uid()
-          )
-        )
-    )
-  );
-
--- Items: user can access if they have access to the parent box's space
-CREATE POLICY "Items: user can access if space is accessible"
+-- Items: members can read
+CREATE POLICY "Items: members can read"
   ON items
-  FOR SELECT USING (
+  FOR SELECT
+  USING (
     EXISTS (
       SELECT 1 FROM boxes
-      JOIN spaces ON boxes.space_id = spaces.id
+      JOIN space_members ON boxes.space_id = space_members.space_id
       WHERE boxes.id = items.box_id
-        AND (
-          spaces.owner_id = auth.uid()
-          OR EXISTS (
-            SELECT 1 FROM space_members
-            WHERE space_members.space_id = boxes.space_id
-              AND space_members.user_id = auth.uid()
-          )
-        )
+        AND space_members.user_id = auth.uid()
     )
   );
 
--- Items: owner or shared member can INSERT, UPDATE, DELETE
-CREATE POLICY "Items: owner or shared member can modify"
+-- Items: members can modify
+CREATE POLICY "Items: members can modify"
   ON items
-  FOR ALL USING (
+  FOR ALL
+  USING (
     EXISTS (
       SELECT 1 FROM boxes
-      JOIN spaces ON boxes.space_id = spaces.id
+      JOIN space_members ON boxes.space_id = space_members.space_id
       WHERE boxes.id = items.box_id
-        AND (
-          spaces.owner_id = auth.uid()
-          OR EXISTS (
-            SELECT 1 FROM space_members
-            WHERE space_members.space_id = boxes.space_id
-              AND space_members.user_id = auth.uid()
-          )
-        )
+        AND space_members.user_id = auth.uid()
     )
   );
 
--- Space_members: only space owner or shared member can INSERT/DELETE, user can SELECT their own memberships
-CREATE POLICY "Space_members: owner or shared member can modify"
+-- Space members: allow all to read
+CREATE POLICY "Space members: allow all to read"
   ON space_members
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM spaces
-      WHERE spaces.id = space_members.space_id
-        AND (
-          spaces.owner_id = auth.uid()
-          OR EXISTS (
-            SELECT 1 FROM space_members sm2
-            WHERE sm2.space_id = spaces.id
-              AND sm2.user_id = auth.uid()
-          )
-        )
-    )
-  );
+  FOR SELECT
+  USING (true);
 
-CREATE POLICY "Space_members: user can view their memberships"
+-- Space members: only owner can modify
+CREATE POLICY "Space members: only owner can modify"
   ON space_members
-  FOR SELECT USING (
-    user_id = auth.uid()
-    OR EXISTS (
-      SELECT 1 FROM spaces
-      WHERE spaces.id = space_members.space_id
-        AND (
-          spaces.owner_id = auth.uid()
-          OR EXISTS (
-            SELECT 1 FROM space_members sm2
-            WHERE sm2.space_id = spaces.id
-              AND sm2.user_id = auth.uid()
-          )
-        )
-    )
-  );
+  FOR ALL
+  USING (is_space_owner(space_id, auth.uid()));

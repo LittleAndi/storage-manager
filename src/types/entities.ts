@@ -1,4 +1,6 @@
 // Centralized entity models for the app
+// Type for creating a new space (no id, created_at, modified_at)
+export type NewSpace = Omit<Space, "id" | "created_at" | "modified_at">;
 
 export interface Space {
     id: string;
