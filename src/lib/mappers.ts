@@ -12,6 +12,7 @@ export function dbSpaceToAppSpace(
     name: db.name,
     location: db.location ?? undefined,
     owner_id: db.owner_id,
+    owner: db.owner ?? undefined,
     thumbnail_url: db.thumbnail_url ?? undefined,
     created_at: db.created_at,
     modified_at: db.modified_at,
@@ -27,6 +28,7 @@ export function appSpaceToDbSpace(
     name: space.name,
     location: space.location ?? null,
     owner_id: space.owner_id,
+    // owner is set by the database, do not send from app
     thumbnail_url: space.thumbnail_url ?? null,
     created_at: space.created_at,
     modified_at: space.modified_at,
@@ -42,6 +44,7 @@ export function newSpaceToDbSpace(
     name: space.name,
     location: space.location ?? null,
     owner_id: space.owner_id,
+    // owner is set by the database, do not send from app
     thumbnail_url: space.thumbnail_url ?? null,
     created_at: now,
     modified_at: now,

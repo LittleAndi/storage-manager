@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { supabase } from "@/supabaseClient";
 import type { NewSpace, Space } from "@/types/entities";
 import { newSpaceToDbSpace } from "@/lib/mappers";
+import { dbSpaceToAppSpace } from "@/lib/mappers";
 
 interface SpacesState {
   spaces: Space[];
@@ -22,11 +23,18 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
   fetchSpaces: async () => {
     set({ loading: true, error: null });
     try {
-      const raw = localStorage.getItem("spaces");
-      const spaces: Space[] = raw ? JSON.parse(raw) : [];
-      set({ spaces: spaces, loading: false });
-    } catch (e: any) {
-      set({ error: e.message, loading: false });
+      const { data, error } = await supabase.from("spaces").select();
+      if (error) {
+        set({ error: error.message, loading: false });
+        return;
+      }
+      // Use mapper to convert DB rows to app spaces
+      const spaces: Space[] = (data || []).map(dbSpaceToAppSpace);
+      set({ spaces, loading: false });
+      localStorage.setItem("spaces", JSON.stringify(spaces));
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      set({ error: message, loading: false });
     }
   },
   addSpace: async (space) => {

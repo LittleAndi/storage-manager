@@ -129,6 +129,7 @@ export type Database = {
           location: string | null
           modified_at: string | null
           name: string
+          owner: string | null
           owner_id: string
           thumbnail_url: string | null
         }
@@ -138,7 +139,8 @@ export type Database = {
           location?: string | null
           modified_at?: string | null
           name: string
-          owner_id: string
+          owner?: string | null
+          owner_id?: string
           thumbnail_url?: string | null
         }
         Update: {
@@ -147,6 +149,7 @@ export type Database = {
           location?: string | null
           modified_at?: string | null
           name?: string
+          owner?: string | null
           owner_id?: string
           thumbnail_url?: string | null
         }
@@ -157,7 +160,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_space_owner: {
+        Args: { space_id: string; user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

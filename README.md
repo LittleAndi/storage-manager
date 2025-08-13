@@ -49,3 +49,11 @@ Storage Manager is a modern, responsive Single Page Application (SPA) for managi
 - Editors can create and move items; Viewers have read-only access
 - QR code scanning opens correct box and respects permissions
 - All pages work on desktop and mobile widths
+
+## Supabase Types
+
+```
+npm i supabase@">=1.8.1" --save-dev
+npx supabase login
+npx supabase gen types typescript --project-id "$PROJECT_REF" --schema public > database.types.ts
+```

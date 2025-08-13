@@ -44,6 +44,29 @@ CREATE TABLE space_members (
   UNIQUE (space_id, user_id)
 );
 
+-- Create a function to set the owner full name
+CREATE OR REPLACE FUNCTION set_space_owner_full_name()
+RETURNS TRIGGER
+SECURITY definer
+AS $$
+BEGIN
+  UPDATE spaces
+  SET owner = u.raw_user_meta_data->>'full_name'
+  FROM auth.users u
+  WHERE spaces.id = NEW.id
+    AND u.id = NEW.owner_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create a trigger to call the function after insert or update
+DROP TRIGGER IF EXISTS trg_set_space_owner_full_name ON spaces;
+
+CREATE TRIGGER trg_set_space_owner_full_name
+AFTER INSERT ON spaces
+FOR EACH ROW
+EXECUTE FUNCTION set_space_owner_full_name();
+
 -- Enable RLS on all tables
 ALTER TABLE spaces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE boxes ENABLE ROW LEVEL SECURITY;
