@@ -29,7 +29,7 @@ const SpaceDetail: React.FC = () => {
       </button>
       <h1 className="text-2xl font-bold mb-4">{space.name}</h1>
       <div className="mb-2 text-muted-foreground">Location: {space.location}</div>
-      <div className="mb-2 text-muted-foreground">Owner: {space.owner_id}</div>
+      <div className="mb-2 text-muted-foreground">Owner: {space.owner}</div>
       <div className="mb-2 text-muted-foreground">Members: {space.memberCount}</div>
       {space.thumbnail_url && (
         <img src={space.thumbnail_url} alt={space.name} className="w-32 h-32 rounded mb-4" />

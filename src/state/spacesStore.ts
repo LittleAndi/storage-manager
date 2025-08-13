@@ -69,7 +69,15 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
           : s
       ),
     }),
-  removeSpace: (id) => {
+  removeSpace: async (id) => {
+    // Remove from Supabase database
+    const { error } = await supabase.from("spaces").delete().eq("id", id);
+    if (error) {
+      set({ error: error.message });
+      console.error(error.message);
+      return;
+    }
+    // Remove from local state and localStorage
     const updated = get().spaces.filter((s) => s.id !== id);
     set({ spaces: updated });
     localStorage.setItem("spaces", JSON.stringify(updated));
