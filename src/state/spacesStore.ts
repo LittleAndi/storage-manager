@@ -1,15 +1,5 @@
 import { create } from "zustand";
-
-export interface Space {
-  id: string;
-  name: string;
-  location?: string;
-  memberCount?: number;
-  owner?: string;
-  thumbnailUrl?: string;
-  created?: number;
-  modified?: number;
-}
+import type { Space } from "@/types/entities";
 
 interface SpacesState {
   spaces: Space[];
@@ -38,11 +28,11 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
   addSpace: (space) => {
     const raw = localStorage.getItem("spaces");
     const existingSpaces: Space[] = raw ? JSON.parse(raw) : [];
-    const now = Date.now();
+    const now = new Date(Date.now()).toISOString();
     const newSpace: Space = {
       ...space,
-      created: now,
-      modified: now,
+      created_at: now,
+      modified_at: now,
     };
     const updated = [...existingSpaces, newSpace];
     set({ spaces: updated });
@@ -51,7 +41,9 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
   updateSpace: (space) =>
     set({
       spaces: get().spaces.map((s) =>
-        s.id === space.id ? { ...space, modified: Date.now() } : s
+        s.id === space.id
+          ? { ...space, modified_at: new Date(Date.now()).toISOString() }
+          : s
       ),
     }),
   removeSpace: (id) => {
