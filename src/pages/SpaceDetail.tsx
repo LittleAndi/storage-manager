@@ -31,8 +31,8 @@ const SpaceDetail: React.FC = () => {
       <div className="mb-2 text-muted-foreground">Location: {space.location}</div>
       <div className="mb-2 text-muted-foreground">Owner: {space.owner}</div>
       <div className="mb-2 text-muted-foreground">Members: {space.memberCount}</div>
-      {space.thumbnailUrl && (
-        <img src={space.thumbnailUrl} alt={space.name} className="w-32 h-32 rounded mb-4" />
+      {space.thumbnail_url && (
+        <img src={space.thumbnail_url} alt={space.name} className="w-32 h-32 rounded mb-4" />
       )}
       {/* TODO: Members, boxes list, map */}
       <MemberList members={[]} />

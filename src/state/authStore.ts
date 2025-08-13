@@ -1,12 +1,6 @@
 import { create } from "zustand";
 
-interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  roles: string[];
-  avatarUrl?: string;
-}
+import type { UserProfile } from "@/types/entities";
 
 interface AuthState {
   token: string | null;

@@ -15,11 +15,11 @@ const Profile: React.FC = () => {
           <CardContent className="p-6">
             <div className="flex items-center gap-4 mb-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src={user.avatarUrl || undefined} alt={user.name || user.email} />
-                <AvatarFallback>{(user.name || user.email)?.[0]?.toUpperCase()}</AvatarFallback>
+                <AvatarImage src={user.avatar_url || undefined} alt={user.full_name || user.email} />
+                <AvatarFallback>{(user.full_name || user.email)?.[0]?.toUpperCase()}</AvatarFallback>
               </Avatar>
               <div>
-                <span className="block text-lg font-semibold">{user.name || user.email}</span>
+                <span className="block text-lg font-semibold">{user.full_name || user.email}</span>
                 <span className="block text-sm text-gray-500">{user.email}</span>
               </div>
             </div>

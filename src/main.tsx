@@ -5,6 +5,8 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { useAuthStore } from './state/authStore';
 import { supabase } from './supabaseClient';
+import type { UserProfile } from "@/types/entities";
+import { supabaseUserToUserProfile } from "./lib/mappers";
 
 function Root() {
   const [loading, setLoading] = useState(true);
@@ -16,15 +18,9 @@ function Root() {
       const session = await supabase.auth.getSession();
       const supabaseUser = session?.data?.session?.user ?? null;
       const providerToken = session?.data?.session?.provider_token ?? null;
-      let userProfile = null;
+      let userProfile: UserProfile | null = null;
       if (supabaseUser) {
-        userProfile = {
-          id: supabaseUser.id,
-          name: supabaseUser.user_metadata?.name || supabaseUser.email || '',
-          email: supabaseUser.email || '',
-          roles: [],
-          avatarUrl: supabaseUser.user_metadata?.avatar_url || '',
-        };
+        userProfile = supabaseUserToUserProfile(supabaseUser);
       }
       setUser(userProfile);
       setToken(providerToken);

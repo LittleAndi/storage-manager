@@ -2,7 +2,7 @@ import React from "react";
 import AppShell from "../components/AppShell";
 import SpaceCard from "../components/SpaceCard";
 import { useSpacesStore } from "@/state/spacesStore";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Select,
   SelectTrigger,
@@ -10,6 +10,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 
 import { useNavigate } from "react-router-dom";
 
@@ -19,6 +20,7 @@ const Spaces: React.FC = () => {
   const removeSpace = useSpacesStore((state) => state.removeSpace);
   const navigate = useNavigate();
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const deletingSpace = spaces.find(s => s.id === deletingId);
   const ALL_LOCATIONS = "__ALL__";
   const [locationFilter, setLocationFilter] = React.useState<string>(ALL_LOCATIONS);
   const locations = React.useMemo(() => {
@@ -40,6 +42,11 @@ const Spaces: React.FC = () => {
   React.useEffect(() => {
     fetchSpaces();
   }, [fetchSpaces]);
+
+  function handleDelete(id: string): void {
+    removeSpace(id);
+    setDeletingId(null);
+  }
 
   return (
     <AppShell>
@@ -83,31 +90,26 @@ const Spaces: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-7 0h10" />
                 </svg>
               </button>
-              {deletingId === space.id && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                  <div className="bg-white rounded shadow-lg p-6 max-w-sm w-full">
-                    <h2 className="text-lg font-bold mb-2">Delete Space?</h2>
-                    <p className="mb-4">Are you sure you want to delete <span className="font-semibold">{space.name}</span>? This action cannot be undone.</p>
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        className="px-4 py-2 rounded bg-muted text-muted-foreground"
-                        onClick={() => setDeletingId(null)}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        className="px-4 py-2 rounded bg-destructive text-destructive-foreground font-bold"
-                        onClick={() => {
-                          removeSpace(space.id);
-                          setDeletingId(null);
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <AlertDialog open={!!deletingId} onOpenChange={open => !open && setDeletingId(null)}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete the space{" "}
+                      <span className="font-semibold">{deletingSpace?.name}</span>.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className={buttonVariants({ variant: "destructive" })}
+                      onClick={() => deletingId && handleDelete(deletingId)}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           ))
         )}

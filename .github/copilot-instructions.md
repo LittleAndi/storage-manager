@@ -222,3 +222,20 @@ For more details, see the [official shadcn/ui Vite guide](https://ui.shadcn.com/
 - `README.md` — setup, development, and deployment instructions.
 - `components/`, `pages/`, and `docs/` — examples of structure and patterns.
 - Linting/formatting configs — for code quality and consistency rules.
+
+## Additions
+
+### **shadcn/ui AlertDialog Destructive Action Styling**
+
+For destructive actions in `AlertDialog`, use the `buttonVariants` utility for styling:
+
+```tsx
+<AlertDialogAction
+  className={buttonVariants({ variant: "destructive" })}
+  onClick={handleDelete}
+>
+  Delete
+</AlertDialogAction>
+```
+
+### Note: The `variant` prop is not directly supported on `AlertDialogAction`. See [shadcn-ui/ui issue #1115](https://github.com/shadcn-ui/ui/issues/1115) for details.
