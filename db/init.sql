@@ -6,11 +6,14 @@ CREATE TABLE spaces (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
   location text,
-  owner_id uuid REFERENCES auth.users(id) NOT NULL,
+  owner_id uuid not null default auth.uid (),
   thumbnail_url text,
   created_at timestamptz DEFAULT now(),
-  modified_at timestamptz DEFAULT now()
+  modified_at timestamptz DEFAULT now(),
+  owner text null,
+  constraint spaces_owner_id_fkey foreign KEY (owner_id) references auth.users (id)
 );
+
 
 -- Table: boxes
 CREATE TABLE boxes (
@@ -96,11 +99,12 @@ CREATE POLICY "Spaces: owners and members can read"
   FOR SELECT
   TO authenticated
   USING (
+    owner_id = (select auth.uid()) OR
     EXISTS (
       SELECT 1
       FROM space_members
       WHERE space_members.space_id = spaces.id
-        AND space_members.user_id = auth.uid()
+        AND space_members.user_id = (select auth.uid())
     )
   );
 
@@ -109,7 +113,7 @@ CREATE POLICY "Spaces: only owner can insert"
   ON spaces
   FOR INSERT
   WITH CHECK (
-    owner_id = auth.uid()
+    owner_id = (select auth.uid())
   );
 
 -- Spaces: only owner can delete
@@ -117,7 +121,7 @@ CREATE POLICY "Spaces: only owner can delete"
   ON spaces
   FOR DELETE
   USING (
-    owner_id = auth.uid()
+    owner_id = (select auth.uid())
   );
 
 -- Spaces: members can update
@@ -128,7 +132,7 @@ CREATE POLICY "Spaces: members can update"
     EXISTS (
       SELECT 1 FROM space_members
       WHERE space_members.space_id = spaces.id
-        AND space_members.user_id = auth.uid()
+        AND space_members.user_id = (select auth.uid())
     )
   );
 
@@ -140,7 +144,7 @@ CREATE POLICY "Boxes: members can read"
     EXISTS (
       SELECT 1 FROM space_members
       WHERE space_members.space_id = boxes.space_id
-        AND space_members.user_id = auth.uid()
+        AND space_members.user_id = (select auth.uid())
     )
   );
 
@@ -152,7 +156,7 @@ CREATE POLICY "Boxes: members can modify"
     EXISTS (
       SELECT 1 FROM space_members
       WHERE space_members.space_id = boxes.space_id
-        AND space_members.user_id = auth.uid()
+        AND space_members.user_id = (select auth.uid())
     )
   );
 
@@ -165,7 +169,7 @@ CREATE POLICY "Items: members can read"
       SELECT 1 FROM boxes
       JOIN space_members ON boxes.space_id = space_members.space_id
       WHERE boxes.id = items.box_id
-        AND space_members.user_id = auth.uid()
+        AND space_members.user_id = (select auth.uid())
     )
   );
 
@@ -178,7 +182,7 @@ CREATE POLICY "Items: members can modify"
       SELECT 1 FROM boxes
       JOIN space_members ON boxes.space_id = space_members.space_id
       WHERE boxes.id = items.box_id
-        AND space_members.user_id = auth.uid()
+        AND space_members.user_id = (select auth.uid())
     )
   );
 
@@ -192,4 +196,4 @@ CREATE POLICY "Space members: allow all to read"
 CREATE POLICY "Space members: only owner can modify"
   ON space_members
   FOR ALL
-  USING (is_space_owner(space_id, auth.uid()));
+  USING (is_space_owner(space_id, (select auth.uid())));
