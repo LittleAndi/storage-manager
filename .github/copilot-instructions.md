@@ -124,6 +124,8 @@ To add shadcn/ui to your Vite + React + Tailwind project:
    // ...existing code...
    ```
 
+Install more components when needed using `npx shadcn@latest add [component]`.
+
 For more details, see the [official shadcn/ui Vite guide](https://ui.shadcn.com/docs/installation/vite).
 
 ## **Key Workflows**
