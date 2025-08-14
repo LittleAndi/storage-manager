@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const Auth: React.FC = () => {
   const handleGoogleLogin = async () => {
@@ -24,6 +25,7 @@ const Auth: React.FC = () => {
       alert('Facebook sign-in failed: ' + error.message);
     }
   };
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
       <div className="w-full max-w-sm bg-white rounded shadow p-6">
@@ -45,6 +47,15 @@ const Auth: React.FC = () => {
           <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#1877F2" d="M24 0C10.745 0 0 10.745 0 24c0 12.02 8.805 21.92 20.205 23.74V31.09h-6.08v-7.09h6.08v-5.41c0-6.02 3.66-9.34 9.13-9.34 2.64 0 5.41.47 5.41.47v5.96h-3.05c-3.01 0-3.95 1.87-3.95 3.79v4.53h6.72l-1.07 7.09h-5.65v16.65C39.195 45.92 48 36.02 48 24 48 10.745 37.255 0 24 0z"/></svg>
           Sign in with Facebook
         </Button>
+        <Alert variant="default" className="mb-4">
+          <AlertTitle>Disclaimer</AlertTitle>
+            <AlertDescription>
+            We use Supabase for authentication <span className="break-all">({supabaseUrl}).</span>
+            Because we are on a free Supabase plan, we cannot use custom domains for OAuth redirects.
+            Therefore you will see the above Supabase-generated domain during sign-in.
+            This is expected and does not affect your security.
+            </AlertDescription>
+        </Alert>
       </div>
     </div>
   );
