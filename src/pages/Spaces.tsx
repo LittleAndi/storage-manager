@@ -3,6 +3,8 @@ import AppShell from "../components/AppShell";
 import SpaceCard from "../components/SpaceCard";
 import { useSpacesStore } from "@/state/spacesStore";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { TrashIcon } from "@/components/ui/trash-icon";
 import {
   Select,
   SelectTrigger,
@@ -24,12 +26,16 @@ const Spaces: React.FC = () => {
   const ALL_LOCATIONS = "__ALL__";
   const [locationFilter, setLocationFilter] = React.useState<string>(ALL_LOCATIONS);
   const locations = React.useMemo(() => {
-  const locs = spaces.map(s => s.location).filter((loc): loc is string => typeof loc === 'string' && loc.length > 0);
-  return Array.from(new Set(locs)).sort((a, b) => a.localeCompare(b));
+    const locs = spaces.map(s => s.location).filter((loc): loc is string => typeof loc === 'string' && loc.length > 0);
+    return Array.from(new Set(locs)).sort((a, b) => a.localeCompare(b));
   }, [spaces]);
   const filteredSpaces = locationFilter !== ALL_LOCATIONS
-    ? spaces.filter((s) => s.location === locationFilter)
-    : spaces;
+  ? spaces.filter((s) => s.location === locationFilter)
+  : spaces;
+  
+  // Loading state: spaces is undefined/null before fetchSpaces resolves
+  // If spaces is undefined/null, or if a loading flag is set, show loading
+  const isLoading = !Array.isArray(spaces) || (Array.isArray(spaces) && spaces.length === 0 && !deletingId && !locations.length);
 
   const orderedSpaces = React.useMemo(() => {
     return [...filteredSpaces].sort((a, b) => {
@@ -70,7 +76,9 @@ const Spaces: React.FC = () => {
         )}
       </div>
       <div className="grid gap-4">
-        {filteredSpaces.length === 0 ? (
+        {isLoading ? (
+          <Spinner size={24} label="Loading spaces..." className="py-8" />
+        ) : Array.isArray(spaces) && filteredSpaces.length === 0 ? (
           <div className="text-muted-foreground">No spaces found.</div>
         ) : (
           orderedSpaces.map((space: typeof spaces[number]) => (
@@ -86,9 +94,7 @@ const Spaces: React.FC = () => {
                 onClick={() => setDeletingId(space.id)}
               >
                 {/* Waste basket icon */}
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-7 0h10" />
-                </svg>
+                <TrashIcon />
               </button>
               <AlertDialog open={!!deletingId} onOpenChange={open => !open && setDeletingId(null)}>
                 <AlertDialogContent>
