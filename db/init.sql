@@ -21,6 +21,7 @@ CREATE TABLE boxes (
   name text NOT NULL,
   space_id uuid REFERENCES spaces(id) NOT NULL,
   location text,
+  content text,
   thumbnail_url text,
   created_at timestamptz DEFAULT now(),
   modified_at timestamptz DEFAULT now()
@@ -79,6 +80,17 @@ ALTER TABLE space_members ENABLE ROW LEVEL SECURITY;
 -- RLS Policies
 
 -- Helper function
+create or replace function get_spaces_for_user(user_id uuid)
+returns setof uuid as $$
+  select id from spaces where owner_id = $1
+$$ stable language sql security definer;
+
+create policy "Space owners can do whatever to boxes"
+on boxes
+for all using (
+  space_id in (select get_spaces_for_user(auth.uid()))
+);
+
 CREATE OR REPLACE FUNCTION is_space_owner(space_id uuid, user_id uuid)
 RETURNS boolean
 LANGUAGE sql

@@ -1,6 +1,11 @@
 // src/lib/mappers.ts
-import type { Space, UserProfile } from "@/types/entities";
-import type { NewSpace } from "@/types/entities";
+import type {
+  Box,
+  NewBox,
+  NewSpace,
+  Space,
+  UserProfile,
+} from "@/types/entities";
 import type { Database } from "@/types/database.types";
 import type { User } from "@supabase/supabase-js";
 
@@ -49,6 +54,53 @@ export function newSpaceToDbSpace(
     created_at: now,
     modified_at: now,
     // id and memberCount are not included for insert
+  };
+}
+
+// Box mappers
+export function dbBoxToAppBox(
+  db: Database["public"]["Tables"]["boxes"]["Row"],
+): Box {
+  return {
+    id: db.id,
+    space_id: db.space_id,
+    name: db.name,
+    location: db.location ?? undefined,
+    thumbnail_url: db.thumbnail_url ?? undefined,
+    created_at: db.created_at,
+    modified_at: db.modified_at,
+    content: db.content,
+  };
+}
+
+export function appBoxToDbBox(
+  box: Box,
+): Database["public"]["Tables"]["boxes"]["Insert"] {
+  return {
+    id: box.id,
+    space_id: box.space_id,
+    name: box.name,
+    location: box.location ?? null,
+    thumbnail_url: box.thumbnail_url ?? null,
+    created_at: box.created_at,
+    modified_at: box.modified_at,
+    content: box.content,
+  };
+}
+
+export function newBoxToDbBox(
+  box: NewBox,
+  now: string,
+): Database["public"]["Tables"]["boxes"]["Insert"] {
+  return {
+    space_id: box.space_id,
+    name: box.name,
+    location: box.location ?? null,
+    thumbnail_url: box.thumbnail_url ?? null,
+    created_at: now,
+    modified_at: now,
+    content: box.content,
+    // id is not included for insert
   };
 }
 

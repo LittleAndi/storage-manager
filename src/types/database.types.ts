@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       boxes: {
         Row: {
+          content: string | null
           created_at: string | null
           id: string
           location: string | null
@@ -25,6 +26,7 @@ export type Database = {
           thumbnail_url: string | null
         }
         Insert: {
+          content?: string | null
           created_at?: string | null
           id?: string
           location?: string | null
@@ -34,6 +36,7 @@ export type Database = {
           thumbnail_url?: string | null
         }
         Update: {
+          content?: string | null
           created_at?: string | null
           id?: string
           location?: string | null
@@ -160,6 +163,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_spaces_for_user: {
+        Args: { user_id: string }
+        Returns: string[]
+      }
       is_space_owner: {
         Args: { space_id: string; user_id: string }
         Returns: boolean

@@ -22,14 +22,18 @@ export interface UserProfile {
     roles: string[];
 }
 
+// Type for creating a new box (no id, created_at, modified_at)
+export type NewBox = Omit<Box, "id" | "created_at" | "modified_at">;
+
 export interface Box {
     id: string;
     name: string;
     space_id: string;
     location?: string;
     thumbnail_url?: string;
-    created_at: string; // ISO timestamp
-    modified_at: string; // ISO timestamp
+    created_at?: string | null; // ISO timestamp
+    modified_at?: string | null; // ISO timestamp
+    content?: string | null;
 }
 
 export interface Item {
