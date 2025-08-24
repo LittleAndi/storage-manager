@@ -13,7 +13,6 @@ import Profile from './pages/Profile';
 import Auth from './pages/Auth';
 import InviteCollaborators from './pages/InviteCollaborators';
 import BulkOperations from './pages/BulkOperations';
-import ScanQR from './pages/ScanQR';
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -54,7 +53,6 @@ function App() {
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/invite" element={<InviteCollaborators />} />
                   <Route path="/bulk" element={<BulkOperations />} />
-                  <Route path="/scan" element={<ScanQR />} />
                 </Routes>
               </RequireAuth>
             }

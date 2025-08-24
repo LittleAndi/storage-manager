@@ -42,7 +42,6 @@ This document describes the frontend architecture, UI/UX, components, pages, sta
 - `PermissionGuard` — HOC / hook to show/hide UI by permission
 - `SearchBar` — global search
 - `ActivityFeed` — recent changes for a space
-- `ScanScanner` — QR/barcode scanner component (mobile)
 
 ### Component responsibilities & props
 
@@ -72,7 +71,8 @@ Provide lightweight props and keep components presentational when possible. For 
 
 #### Scanning & QR code flow
 
-- Provide two flows: `Generate QR` for a box (server-side generates a short code) and `Scan QR` (mobile camera). After scanning, route to box detail or show preview if limited permissions.
+- `Generate QR` for a box (labels). Currently available from the Space Details for all the boxes.
+- Scanning tht QR code will take the user to the box directly since it shall contain the entire URL for the box.
 
 #### Bulk operations
 
