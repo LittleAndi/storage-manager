@@ -45,6 +45,7 @@ CREATE TABLE space_members (
   user_id uuid REFERENCES auth.users(id) NOT NULL,
   role text DEFAULT 'viewer', -- e.g., viewer, editor
   created_at timestamptz DEFAULT now(),
+  modified_at timestamptz DEFAULT now(),
   UNIQUE (space_id, user_id)
 );
 
@@ -198,14 +199,87 @@ CREATE POLICY "Items: members can modify"
     )
   );
 
--- Space members: allow all to read
-CREATE POLICY "Space members: allow all to read"
-  ON space_members
-  FOR SELECT
-  USING (true);
+-- Space members
+CREATE OR REPLACE FUNCTION public.add_space_member(
+    p_user_email text, 
+    p_space_id uuid, 
+    p_member_role text DEFAULT 'member'
+)
+RETURNS boolean
+SECURITY DEFINER
+LANGUAGE plpgsql
+AS $$
+DECLARE 
+    is_space_owner boolean;
+    target_user_id uuid;
+    requesting_user_id uuid;
+    existing_member_count integer;
+BEGIN
+    -- Get the current authenticated user's ID
+    requesting_user_id := auth.uid();
 
--- Space members: only owner can modify
-CREATE POLICY "Space members: only owner can modify"
-  ON space_members
-  FOR ALL
-  USING (is_space_owner(space_id, (select auth.uid())));
+    -- Check if the requesting user is the owner of the space
+    SELECT EXISTS (
+        SELECT 1 
+        FROM spaces 
+        WHERE id = p_space_id 
+        AND owner_id = requesting_user_id
+    ) INTO is_space_owner;
+
+    -- If not the space owner, return false
+    IF NOT is_space_owner THEN
+        RETURN false;
+    END IF;
+
+    -- Check if user email exists in auth.users and get their ID
+    SELECT id INTO target_user_id
+    FROM auth.users
+    WHERE email = p_user_email;
+
+    -- If user not found, return false
+    IF target_user_id IS NULL THEN
+        RETURN false;
+    END IF;
+
+    -- Make sure the user can't add themselves as members
+    IF target_user_id = requesting_user_id THEN
+        RETURN false;
+    END IF;
+
+    -- Check if the user is already a member of the space
+    SELECT COUNT(*) INTO existing_member_count
+    FROM space_members
+    WHERE space_id = p_space_id 
+      AND user_id = target_user_id;
+
+    -- If already a member, update the role
+    IF existing_member_count > 0 THEN
+        UPDATE space_members
+        SET role = p_member_role,
+            updated_at = NOW()
+        WHERE space_id = p_space_id 
+          AND user_id = target_user_id;
+        
+        RETURN true;
+    END IF;
+
+    -- Insert the new space member
+    INSERT INTO space_members (user_id, space_id, role)
+    VALUES (target_user_id, p_space_id, p_member_role);
+
+    RETURN true;
+END;
+$$;
+
+-- Grant execution permissions to authenticated users
+GRANT EXECUTE ON FUNCTION public.add_space_member(text, uuid, text) TO authenticated;
+
+-- Policy on space_members
+create policy "Owners can modify members"
+on "public"."space_members"
+to public
+using (
+  (( SELECT auth.uid() AS uid) IN ( SELECT spaces.owner_id
+   FROM spaces
+  WHERE (space_members.space_id = spaces.id)))
+);
