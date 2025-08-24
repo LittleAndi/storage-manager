@@ -11,7 +11,6 @@ const navLinks = [
   { href: "/spaces", label: "Spaces" },
   { href: "/profile", label: "Profile" },
   { href: "/bulk", label: "Bulk Operations" },
-  { href: "/scan", label: "Scan QR" },
 ];
 
 const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {

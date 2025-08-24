@@ -7,7 +7,7 @@ Storage Manager is a modern, responsive Single Page Application (SPA) for managi
 - Manage storage spaces, boxes, and items
 - User roles: Owner, Editor, Viewer
 - Invite collaborators and share access
-- QR/barcode scanning for boxes/items
+- QR code creation for labels to boxes
 - Bulk operations: move, delete, export, tag
 - Accessible UI (WCAG AA)
 - Mobile-first design
@@ -47,7 +47,7 @@ Storage Manager is a modern, responsive Single Page Application (SPA) for managi
 
 - Users can create a space, invite another user, and see shared spaces
 - Editors can create and move items; Viewers have read-only access
-- QR code scanning opens correct box and respects permissions
+- QR code scanning opens correct link to box and respects permissions
 - All pages work on desktop and mobile widths
 
 ## Supabase Types
