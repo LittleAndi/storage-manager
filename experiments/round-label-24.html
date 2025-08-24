@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>QR Code Labels</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 0;
+      }
+      @media print {
+        body {
+          margin: 0;
+        }
+        button {
+          display: none !important;
+        }
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        font-family: sans-serif;
+      }
+
+      .sheet {
+        position: relative;
+        width: 210mm;
+        height: 297mm;
+        padding: 13.5mm 16mm; /* top/bottom, left/right margins */
+        box-sizing: border-box;
+
+        display: grid;
+        grid-template-columns: repeat(4, 40mm);
+        grid-template-rows: repeat(6, 40mm);
+        gap: 6mm;
+      }
+
+      .label {
+        width: 40mm;
+        height: 40mm;
+        border: 0.3mm dotted gray;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        position: relative;
+        text-align: center;
+      }
+
+      .qr {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .qr canvas,
+      .qr img {
+        max-width: 24mm; /* ~90px at 96dpi */
+        max-height: 24mm;
+      }
+
+      .label-number {
+        font-size: 7pt;
+        margin-top: 0.5mm; /* very close */
+        line-height: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sheet" id="sheet"></div>
+    <button onclick="window.print()">Print</button>
+
+    <!-- QRCode.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+      const sheet = document.getElementById("sheet");
+      const totalLabels = 24;
+      const baseUrl = "https://example.com"; // easy to change later
+
+      for (let i = 1; i <= totalLabels; i++) {
+        const label = document.createElement("div");
+        label.className = "label";
+
+        const qrDiv = document.createElement("div");
+        qrDiv.className = "qr";
+        label.appendChild(qrDiv);
+
+        new QRCode(qrDiv, {
+          text: `${baseUrl}/${i}`,
+          width: 90,
+          height: 90,
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+
+        const number = document.createElement("div");
+        number.className = "label-number";
+        number.textContent = "This is box named " + i;
+        qrDiv.appendChild(number);
+
+        sheet.appendChild(label);
+      }
+    </script>
+  </body>
+</html>

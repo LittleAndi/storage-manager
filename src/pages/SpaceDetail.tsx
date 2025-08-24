@@ -8,6 +8,8 @@ import AppShell from "../components/AppShell";
 // import MemberList from "../components/MemberList";
 import CreateBoxModal from "../components/CreateBoxModal";
 import BoxCard from "../components/BoxCard";
+import { LabelSheet } from "../components/LabelSheet";
+import './SpaceDetail.css';
 
 const SpaceDetail: React.FC = () => {
   const { spaceId } = useParams();
@@ -21,6 +23,7 @@ const SpaceDetail: React.FC = () => {
   const fetchBoxes = useBoxesStore((state) => state.fetchBoxes);
 
   const triggerButtonRef = React.useRef<HTMLButtonElement>(null);
+  const [showLabelSheet, setShowLabelSheet] = React.useState(false);
 
   const handleOpenModal = () => {
     setModalOpen(true);
@@ -61,7 +64,7 @@ const SpaceDetail: React.FC = () => {
       {space.thumbnail_url && (
         <img src={space.thumbnail_url} alt={space.name} className="w-32 h-32 rounded mb-4" />
       )}
-      <div className="mb-4">
+      <div className="mb-4 flex gap-2">
         <button
           ref={triggerButtonRef}
           className="px-4 py-2 rounded bg-secondary text-secondary-foreground shadow-sm"
@@ -69,30 +72,58 @@ const SpaceDetail: React.FC = () => {
         >
           + Create Box
         </button>
+        <button
+          className="px-4 py-2 rounded shadow-sm"
+          onClick={() => setShowLabelSheet(v => !v)}
+          aria-pressed={showLabelSheet}
+        >
+          {showLabelSheet ? '👁️ View Boxes' : '🏷️ View Labels'}
+        </button>
       </div>
       <CreateBoxModal open={modalOpen} onClose={handleCloseModal} />
       {/* TODO: Members, boxes list, map */}
       {/* <MemberList members={[]} /> */}
-      <div className="mt-6">
-        <h2 className="text-lg font-semibold mb-2">Boxes</h2>
-        {boxes.length === 0 ? (
-          <div className="text-muted-foreground">No boxes yet.</div>
-        ) : (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-            {boxes.map(box => (
-              <BoxCard
-                key={box.id}
-                id={box.id}
-                name={box.name}
-                location={box.location}
-                // itemCount={box.itemCount}
-                thumbnailUrl={box.thumbnail_url}
-                onOpen={() => navigate(`/spaces/${spaceId}/boxes/${box.id}`)}
-              />
-            ))}
+  {!showLabelSheet ? (
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-2">Boxes</h2>
+          {boxes.length === 0 ? (
+            <div className="text-muted-foreground">No boxes yet.</div>
+          ) : (
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+              {boxes.map(box => (
+                <BoxCard
+                  key={box.id}
+                  id={box.id}
+                  name={box.name}
+                  location={box.location}
+                  // itemCount={box.itemCount}
+                  thumbnailUrl={box.thumbnail_url}
+                  onOpen={() => navigate(`/spaces/${spaceId}/boxes/${box.id}`)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold">Label Sheet</h2>
+            <div className="flex gap-2">
+              <button
+                className="px-3 py-1 rounded bg-primary text-primary-foreground"
+                onClick={() => {
+                  window.print();
+                }}
+              >
+                🖨️ Print Labels
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+          <div className="print-area">
+            <LabelSheet boxes={boxes} spaceId={spaceId} />
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 };
