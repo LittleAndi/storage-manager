@@ -10,6 +10,7 @@ import CreateBoxModal from "../components/CreateBoxModal";
 import BoxCard from "../components/BoxCard";
 import { LabelSheet } from "../components/LabelSheet";
 import './SpaceDetail.css';
+import ShareSpaceModal from "@/components/ShareSpaceModal";
 
 const SpaceDetail: React.FC = () => {
   const { spaceId } = useParams();
@@ -18,20 +19,18 @@ const SpaceDetail: React.FC = () => {
   const space = useSpacesStore((state) => state.spaces.find(s => s.id === spaceId));
   const navigate = useNavigate();
 
-  const [modalOpen, setModalOpen] = React.useState(false);
+  const [createBoxOpen, setCreateBoxOpen] = React.useState(false);
+  const [shareSpaceOpen, setShareSpaceOpen] = React.useState(false);
   const boxes = useBoxesStore((state) => state.boxes);
   const fetchBoxes = useBoxesStore((state) => state.fetchBoxes);
 
-  const triggerButtonRef = React.useRef<HTMLButtonElement>(null);
+  const createBoxButtonRef = React.useRef<HTMLButtonElement>(null);
   const [showLabelSheet, setShowLabelSheet] = React.useState(false);
 
-  const handleOpenModal = () => {
-    setModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setModalOpen(false);
-  };
+  const openCreateBox = () => setCreateBoxOpen(true);
+  const closeCreateBox = () => setCreateBoxOpen(false);
+  const openShareSpace = () => setShareSpaceOpen(true);
+  const closeShareSpace = () => setShareSpaceOpen(false);
 
   React.useEffect(() => {
     if (!spaces || spaces.length === 0) {
@@ -64,13 +63,19 @@ const SpaceDetail: React.FC = () => {
       {space.thumbnail_url && (
         <img src={space.thumbnail_url} alt={space.name} className="w-32 h-32 rounded mb-4" />
       )}
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex gap-2 flex-wrap">
         <button
-          ref={triggerButtonRef}
+          ref={createBoxButtonRef}
           className="px-4 py-2 rounded bg-secondary text-secondary-foreground shadow-sm"
-          onClick={handleOpenModal}
+          onClick={openCreateBox}
         >
           + Create Box
+        </button>
+        <button
+          className="px-4 py-2 rounded bg-secondary text-secondary-foreground shadow-sm"
+          onClick={openShareSpace}
+        >
+          🔗 Share Space
         </button>
         <button
           className="px-4 py-2 rounded shadow-sm"
@@ -80,10 +85,12 @@ const SpaceDetail: React.FC = () => {
           {showLabelSheet ? '👁️ View Boxes' : '🏷️ View Labels'}
         </button>
       </div>
-      <CreateBoxModal open={modalOpen} onClose={handleCloseModal} />
+      <CreateBoxModal open={createBoxOpen} onClose={closeCreateBox} />
+      <ShareSpaceModal open={shareSpaceOpen} onClose={closeShareSpace} spaceId={space.id} />
+      
       {/* TODO: Members, boxes list, map */}
       {/* <MemberList members={[]} /> */}
-  {!showLabelSheet ? (
+      {!showLabelSheet ? (
         <div className="mt-6">
           <h2 className="text-lg font-semibold mb-2">Boxes</h2>
           {boxes.length === 0 ? (

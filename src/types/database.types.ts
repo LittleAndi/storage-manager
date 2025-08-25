@@ -99,6 +99,7 @@ export type Database = {
           id: string
           role: string | null
           space_id: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
@@ -106,6 +107,7 @@ export type Database = {
           id?: string
           role?: string | null
           space_id: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
@@ -113,6 +115,7 @@ export type Database = {
           id?: string
           role?: string | null
           space_id?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -163,6 +166,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_space_member: {
+        Args: {
+          p_member_role?: string
+          p_space_id: string
+          p_user_email: string
+        }
+        Returns: boolean
+      }
       get_spaces_for_user: {
         Args: { user_id: string }
         Returns: string[]
