@@ -283,3 +283,123 @@ using (
    FROM spaces
   WHERE (space_members.space_id = spaces.id)))
 );
+
+
+-- For later
+-- Space Member Roles: 'owner', 'admin', 'editor', 'viewer'
+
+-- RLS for Spaces
+CREATE OR REPLACE FUNCTION is_space_member(check_space_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+    SELECT EXISTS (
+        SELECT 1 
+        FROM space_members 
+        WHERE space_id = check_space_id 
+        AND user_id = auth.uid()
+        AND role != 'viewer'
+    );
+$$;
+
+-- Spaces: Owner and Admin Full Access
+CREATE POLICY "Owners and Admins can manage spaces" ON spaces
+FOR ALL TO authenticated
+USING (
+    id IN (
+        SELECT space_id 
+        FROM space_members 
+        WHERE user_id = auth.uid() 
+        AND role IN ('owner', 'admin')
+    ) OR owner_id = auth.uid()
+)
+WITH CHECK (
+    is_space_member(id) OR owner_id = auth.uid()
+);
+
+-- Spaces: Viewers can view
+CREATE POLICY "Viewers can view space details" ON spaces
+FOR SELECT TO authenticated
+USING (
+    id IN (
+        SELECT space_id 
+        FROM space_members 
+        WHERE user_id = auth.uid()
+    )
+);
+
+-- Boxes: Owner and Admin Full Access
+CREATE POLICY "Owners and Admins can manage boxes" ON boxes
+FOR ALL TO authenticated
+USING (
+    space_id IN (
+        SELECT space_id 
+        FROM space_members 
+        WHERE user_id = auth.uid() 
+        AND role IN ('owner', 'admin')
+    ) OR space_id IN (
+        SELECT id 
+        FROM spaces 
+        WHERE owner_id = auth.uid()
+    )
+)
+WITH CHECK (
+    space_id IN (
+        SELECT space_id 
+        FROM space_members 
+        WHERE user_id = auth.uid() 
+        AND role IN ('owner', 'admin', 'editor')
+    ) OR space_id IN (
+        SELECT id 
+        FROM spaces 
+        WHERE owner_id = auth.uid()
+    )
+);
+
+-- Boxes: Editors can add/modify boxes
+CREATE POLICY "Editors can modify boxes in their spaces" ON boxes
+FOR INSERT TO authenticated
+WITH CHECK (
+    space_id IN (
+        SELECT space_id 
+        FROM space_members 
+        WHERE user_id = auth.uid() 
+        AND role IN ('owner', 'admin', 'editor')
+    )
+);
+
+-- Boxes: Viewers can view
+CREATE POLICY "Viewers can view boxes" ON boxes
+FOR SELECT TO authenticated
+USING (
+    space_id IN (
+        SELECT space_id 
+        FROM space_members 
+        WHERE user_id = auth.uid()
+    )
+);
+
+-- Space Members: Owner/Admin can manage membership
+CREATE POLICY "Owners and Admins can manage space members" ON space_members
+FOR ALL TO authenticated
+USING (
+    space_id IN (
+        SELECT space_id 
+        FROM space_members 
+        WHERE user_id = auth.uid() 
+        AND role IN ('owner', 'admin')
+    )
+)
+WITH CHECK (
+    space_id IN (
+        SELECT space_id 
+        FROM space_members 
+        WHERE user_id = auth.uid() 
+        AND role IN ('owner', 'admin')
+    )
+);
+
+-- Index for performance
+CREATE INDEX idx_space_members_user_space ON space_members(user_id, space_id, role);
+CREATE INDEX idx_spaces_owner ON spaces(owner_id);
