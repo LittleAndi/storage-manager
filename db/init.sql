@@ -14,7 +14,6 @@ CREATE TABLE spaces (
   constraint spaces_owner_id_fkey foreign KEY (owner_id) references auth.users (id)
 );
 
-
 -- Table: boxes
 CREATE TABLE boxes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -49,6 +48,12 @@ CREATE TABLE space_members (
   UNIQUE (space_id, user_id)
 );
 
+-- Enable RLS on all tables
+ALTER TABLE spaces ENABLE ROW LEVEL SECURITY;
+ALTER TABLE boxes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE space_members ENABLE ROW LEVEL SECURITY;
+
 -- Create a function to set the owner full name
 CREATE OR REPLACE FUNCTION set_space_owner_full_name()
 RETURNS TRIGGER
@@ -71,133 +76,6 @@ CREATE TRIGGER trg_set_space_owner_full_name
 AFTER INSERT ON spaces
 FOR EACH ROW
 EXECUTE FUNCTION set_space_owner_full_name();
-
--- Enable RLS on all tables
-ALTER TABLE spaces ENABLE ROW LEVEL SECURITY;
-ALTER TABLE boxes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE space_members ENABLE ROW LEVEL SECURITY;
-
--- RLS Policies
-
--- Helper function
-create or replace function get_spaces_for_user(user_id uuid)
-returns setof uuid as $$
-  select id from spaces where owner_id = $1
-$$ stable language sql security definer;
-
-create policy "Space owners can do whatever to boxes"
-on boxes
-for all using (
-  space_id in (select get_spaces_for_user(auth.uid()))
-);
-
-CREATE OR REPLACE FUNCTION is_space_owner(space_id uuid, user_id uuid)
-RETURNS boolean
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM spaces
-    WHERE id = space_id
-      AND owner_id = user_id
-  );
-$$;
-
--- Spaces: owners and members can read
-CREATE POLICY "Spaces: owners and members can read"
-  ON spaces
-  FOR SELECT
-  TO authenticated
-  USING (
-    owner_id = (select auth.uid()) OR
-    EXISTS (
-      SELECT 1
-      FROM space_members
-      WHERE space_members.space_id = spaces.id
-        AND space_members.user_id = (select auth.uid())
-    )
-  );
-
--- Spaces: only owner can create
-CREATE POLICY "Spaces: only owner can insert"
-  ON spaces
-  FOR INSERT
-  WITH CHECK (
-    owner_id = (select auth.uid())
-  );
-
--- Spaces: only owner can delete
-CREATE POLICY "Spaces: only owner can delete"
-  ON spaces
-  FOR DELETE
-  USING (
-    owner_id = (select auth.uid())
-  );
-
--- Spaces: members can update
-CREATE POLICY "Spaces: members can update"
-  ON spaces
-  FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM space_members
-      WHERE space_members.space_id = spaces.id
-        AND space_members.user_id = (select auth.uid())
-    )
-  );
-
--- Boxes: members can read
-CREATE POLICY "Boxes: members can read"
-  ON boxes
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM space_members
-      WHERE space_members.space_id = boxes.space_id
-        AND space_members.user_id = (select auth.uid())
-    )
-  );
-
--- Boxes: members can modify
-CREATE POLICY "Boxes: members can modify"
-  ON boxes
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM space_members
-      WHERE space_members.space_id = boxes.space_id
-        AND space_members.user_id = (select auth.uid())
-    )
-  );
-
--- Items: members can read
-CREATE POLICY "Items: members can read"
-  ON items
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM boxes
-      JOIN space_members ON boxes.space_id = space_members.space_id
-      WHERE boxes.id = items.box_id
-        AND space_members.user_id = (select auth.uid())
-    )
-  );
-
--- Items: members can modify
-CREATE POLICY "Items: members can modify"
-  ON items
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM boxes
-      JOIN space_members ON boxes.space_id = space_members.space_id
-      WHERE boxes.id = items.box_id
-        AND space_members.user_id = (select auth.uid())
-    )
-  );
 
 -- Space members
 CREATE OR REPLACE FUNCTION public.add_space_member(
@@ -256,7 +134,7 @@ BEGIN
     IF existing_member_count > 0 THEN
         UPDATE space_members
         SET role = p_member_role,
-            updated_at = NOW()
+            modified_at = NOW()
         WHERE space_id = p_space_id 
           AND user_id = target_user_id;
         
@@ -285,121 +163,123 @@ using (
 );
 
 
--- For later
--- Space Member Roles: 'owner', 'admin', 'editor', 'viewer'
-
--- RLS for Spaces
-CREATE OR REPLACE FUNCTION is_space_member(check_space_id uuid)
+-- Is the current user an owner or admin of a given space?
+-- Includes the explicit owner_id on the spaces table.
+CREATE OR REPLACE FUNCTION public.is_space_owner_or_admin(p_space_id uuid)
 RETURNS boolean
 LANGUAGE sql
 SECURITY DEFINER
 AS $$
     SELECT EXISTS (
-        SELECT 1 
-        FROM space_members 
-        WHERE space_id = check_space_id 
-        AND user_id = auth.uid()
-        AND role != 'viewer'
+        SELECT 1
+        FROM space_members sm
+        WHERE sm.space_id = p_space_id
+          AND sm.user_id = auth.uid()
+          AND sm.role IN ('owner','admin')
+        UNION
+        SELECT 1
+        FROM spaces s
+        WHERE s.id = p_space_id
+          AND s.owner_id = auth.uid()
     );
 $$;
 
--- Spaces: Owner and Admin Full Access
-CREATE POLICY "Owners and Admins can manage spaces" ON spaces
-FOR ALL TO authenticated
-USING (
-    id IN (
-        SELECT space_id 
-        FROM space_members 
-        WHERE user_id = auth.uid() 
-        AND role IN ('owner', 'admin')
-    ) OR owner_id = auth.uid()
-)
-WITH CHECK (
-    is_space_member(id) OR owner_id = auth.uid()
-);
+-- Can the current user view a space (any role, including owner)?
+CREATE OR REPLACE FUNCTION public.is_space_viewer(p_space_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM space_members sm
+        WHERE sm.space_id = p_space_id
+          AND sm.user_id = auth.uid()
+        UNION
+        SELECT 1
+        FROM spaces s
+        WHERE s.id = p_space_id
+          AND s.owner_id = auth.uid()
+    );
+$$;
 
--- Spaces: Viewers can view
-CREATE POLICY "Viewers can view space details" ON spaces
+-- Can the current user edit boxes in a space (owner, admin, or editor)?
+CREATE OR REPLACE FUNCTION public.can_edit_boxes(p_space_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM space_members sm
+        WHERE sm.space_id = p_space_id
+          AND sm.user_id = auth.uid()
+          AND sm.role IN ('owner','admin','editor')
+        UNION
+        SELECT 1
+        FROM spaces s
+        WHERE s.id = p_space_id
+          AND s.owner_id = auth.uid()
+    );
+$$;
+
+
+-- Owners / admins (and the explicit owner_id) have full CRUD on spaces
+CREATE POLICY "owners_admins_full_access"
+ON public.spaces
+FOR ALL TO authenticated
+USING (public.is_space_owner_or_admin(id))
+WITH CHECK (public.is_space_owner_or_admin(id));
+
+-- Viewers (any member) can only read
+CREATE POLICY "viewers_can_select"
+ON public.spaces
 FOR SELECT TO authenticated
-USING (
-    id IN (
-        SELECT space_id 
-        FROM space_members 
-        WHERE user_id = auth.uid()
-    )
-);
+USING (public.is_space_viewer(id));
 
--- Boxes: Owner and Admin Full Access
-CREATE POLICY "Owners and Admins can manage boxes" ON boxes
+-- Owners / admins get full CRUD on boxes
+CREATE POLICY "boxes_owner_admin_full"
+ON public.boxes
 FOR ALL TO authenticated
-USING (
-    space_id IN (
-        SELECT space_id 
-        FROM space_members 
-        WHERE user_id = auth.uid() 
-        AND role IN ('owner', 'admin')
-    ) OR space_id IN (
-        SELECT id 
-        FROM spaces 
-        WHERE owner_id = auth.uid()
-    )
-)
-WITH CHECK (
-    space_id IN (
-        SELECT space_id 
-        FROM space_members 
-        WHERE user_id = auth.uid() 
-        AND role IN ('owner', 'admin', 'editor')
-    ) OR space_id IN (
-        SELECT id 
-        FROM spaces 
-        WHERE owner_id = auth.uid()
-    )
-);
+USING (public.is_space_owner_or_admin(space_id))
+WITH CHECK (public.is_space_owner_or_admin(space_id));
 
--- Boxes: Editors can add/modify boxes
-CREATE POLICY "Editors can modify boxes in their spaces" ON boxes
+-- Editors (owner, admin, editor) can INSERT
+CREATE POLICY "boxes_editors_insert"
+ON public.boxes
 FOR INSERT TO authenticated
-WITH CHECK (
-    space_id IN (
-        SELECT space_id 
-        FROM space_members 
-        WHERE user_id = auth.uid() 
-        AND role IN ('owner', 'admin', 'editor')
-    )
-);
+WITH CHECK (public.can_edit_boxes(space_id));
 
--- Boxes: Viewers can view
-CREATE POLICY "Viewers can view boxes" ON boxes
+-- Editors can UPDATE
+CREATE POLICY "boxes_editors_update"
+ON public.boxes
+FOR UPDATE TO authenticated
+USING (public.can_edit_boxes(space_id))
+WITH CHECK (public.can_edit_boxes(space_id));
+
+-- Editors can DELETE
+CREATE POLICY "boxes_editors_delete"
+ON public.boxes
+FOR DELETE TO authenticated
+USING (public.can_edit_boxes(space_id));
+
+-- Viewers (any member) can SELECT only
+CREATE POLICY "boxes_viewers_select"
+ON public.boxes
 FOR SELECT TO authenticated
-USING (
-    space_id IN (
-        SELECT space_id 
-        FROM space_members 
-        WHERE user_id = auth.uid()
-    )
-);
+USING (public.is_space_viewer(space_id));
 
--- Space Members: Owner/Admin can manage membership
-CREATE POLICY "Owners and Admins can manage space members" ON space_members
+
+-- Only owners / admins of a space can manage its membership rows
+CREATE POLICY "members_owner_admin_full"
+ON public.space_members
 FOR ALL TO authenticated
-USING (
-    space_id IN (
-        SELECT space_id 
-        FROM space_members 
-        WHERE user_id = auth.uid() 
-        AND role IN ('owner', 'admin')
-    )
-)
-WITH CHECK (
-    space_id IN (
-        SELECT space_id 
-        FROM space_members 
-        WHERE user_id = auth.uid() 
-        AND role IN ('owner', 'admin')
-    )
-);
+USING (public.is_space_owner_or_admin(space_id))
+WITH CHECK (public.is_space_owner_or_admin(space_id));
 
--- Index for performance
-CREATE INDEX idx_space_members_user_space ON space_members(user_id, space_id, role);
-CREATE INDEX idx_spaces_owner ON spaces(owner_id);
+
+CREATE INDEX IF NOT EXISTS idx_space_members_user_space
+    ON public.space_members(user_id, space_id, role);
+
+CREATE INDEX IF NOT EXISTS idx_spaces_owner
+    ON public.spaces(owner_id);
