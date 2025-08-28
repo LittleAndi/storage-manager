@@ -53,7 +53,7 @@ Storage Manager is a modern, responsive Single Page Application (SPA) for managi
 ## Supabase Types
 
 ```
-npm i supabase@">=1.8.1" --save-dev
+npm i supabase@">=2.34.3" --save-dev
 npx supabase login
 npx supabase gen types typescript --project-id "$PROJECT_REF" --schema public > database.types.ts
 ```
