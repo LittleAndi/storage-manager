@@ -30,7 +30,6 @@
 # Existing shadcn/ui primitives and additional internal UI components with potential additional usage spots
 
 - `Button` (also `buttonVariants`)  
-  - Use small variant for Google/Facebook auth buttons in `Auth` to better align vertical rhythm.  
   - Add destructive variant to delete space action in `Spaces` AlertDialog (already partially styled) and future box/item delete flows.
 
 - `Badge`  
