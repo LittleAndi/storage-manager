@@ -1,10 +1,18 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetTrigger, SheetContent, SheetTitle, SheetDescription, SheetHeader } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetTitle,
+  SheetDescription,
+  SheetHeader,
+} from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { useAuthStore } from '../state/authStore';
-import { supabase } from '../supabaseClient';
+import { useAuthStore } from "../state/authStore";
+import { supabase } from "../supabaseClient";
+import { Link, useLocation } from "react-router-dom";
 
 const navLinks = [
   { href: "/", label: "Dashboard" },
@@ -17,6 +25,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const setToken = useAuthStore((state) => state.setToken);
+  const location = useLocation();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -24,6 +33,10 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     setToken(null);
     toast.success("Logged out successfully");
   };
+
+  const isActive = (href: string) =>
+    location.pathname === href || location.pathname.startsWith(href + "/");
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <header className="bg-gray-900 text-white p-4 flex items-center justify-between">
@@ -32,10 +45,20 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {user && (
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.avatar_url || undefined} alt={user.full_name || user.email} />
-                <AvatarFallback>{(user.full_name || user.email)?.[0]?.toUpperCase()}</AvatarFallback>
+                <AvatarImage
+                  src={user.avatar_url || undefined}
+                  alt={user.full_name || user.email}
+                />
+                <AvatarFallback>
+                  {(user.full_name || user.email)?.[0]?.toUpperCase()}
+                </AvatarFallback>
               </Avatar>
-              <span className="text-sm font-semibold" aria-label="Logged in user name">{user.full_name || user.email}</span>
+              <span
+                className="text-sm font-semibold"
+                aria-label="Logged in user name"
+              >
+                {user.full_name || user.email}
+              </span>
             </div>
           )}
           <Sheet>
@@ -45,19 +68,40 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 aria-label="Open navigation menu"
                 variant="ghost"
               >
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                <svg
+                  width="24"
+                  height="24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="feather feather-menu"
+                >
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
               </Button>
             </SheetTrigger>
             <SheetContent side="left">
               <SheetHeader>
                 <SheetTitle className="sr-only">Menu</SheetTitle>
-                <SheetDescription className="sr-only">Storage Manager navigation</SheetDescription>
+                <SheetDescription className="sr-only">
+                  Storage Manager navigation
+                </SheetDescription>
               </SheetHeader>
               <nav className="p-4">
                 <ul className="space-y-2">
-                  {navLinks.map(link => (
+                  {navLinks.map((link) => (
                     <li key={link.href}>
-                      <a href={link.href} className="block px-3 text-gray-900 hover:bg-gray-100 rounded">{link.label}</a>
+                      <Button
+                        asChild
+                        variant={isActive(link.href) ? "secondary" : "ghost"}
+                        className="w-full justify-start"
+                      >
+                        <Link to={link.href}>{link.label}</Link>
+                      </Button>
                     </li>
                   ))}
                   {user && (
@@ -79,13 +123,18 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
       </header>
       <div className="flex flex-1">
-        {/* Desktop sidebar */}
-  <aside className="hidden md:flex md:flex-col md:w-64 bg-white shadow-lg p-4">
+        <aside className="hidden md:flex md:flex-col md:w-64 bg-white shadow-lg p-4">
           <nav>
             <ul className="space-y-2">
-              {navLinks.map(link => (
+              {navLinks.map((link) => (
                 <li key={link.href}>
-                  <a href={link.href} className="block py-2 px-3 rounded hover:bg-gray-200 text-gray-900">{link.label}</a>
+                  <Button
+                    asChild
+                    variant={isActive(link.href) ? "secondary" : "ghost"}
+                    className="w-full justify-start"
+                  >
+                    <Link to={link.href}>{link.label}</Link>
+                  </Button>
                 </li>
               ))}
               {user && (

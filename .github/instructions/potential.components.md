@@ -30,7 +30,6 @@
 # Existing shadcn/ui primitives and additional internal UI components with potential additional usage spots
 
 - `Button` (also `buttonVariants`)  
-  - Replace raw <a> sidebar nav links in `AppShell` with asChild Buttons for consistent focus states.  
   - Convert emoji action buttons (Print / View Labels toggle / Back arrow) in `SpaceDetail` to icon + text Buttons (ghost / outline variants).  
   - Use small variant for Google/Facebook auth buttons in `Auth` to better align vertical rhythm.  
   - Add destructive variant to delete space action in `Spaces` AlertDialog (already partially styled) and future box/item delete flows.
