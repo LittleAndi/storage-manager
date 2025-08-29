@@ -97,6 +97,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          modified_at: string | null
           role: string | null
           space_id: string
           user_id: string
@@ -104,6 +105,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          modified_at?: string | null
           role?: string | null
           space_id: string
           user_id: string
@@ -111,6 +113,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          modified_at?: string | null
           role?: string | null
           space_id?: string
           user_id?: string
@@ -163,12 +166,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_spaces_for_user: {
-        Args: { user_id: string }
-        Returns: string[]
+      add_space_member: {
+        Args: {
+          p_member_role?: string
+          p_space_id: string
+          p_user_email: string
+        }
+        Returns: boolean
       }
-      is_space_owner: {
-        Args: { space_id: string; user_id: string }
+      can_edit_boxes: {
+        Args: { p_space_id: string }
+        Returns: boolean
+      }
+      get_space_members: {
+        Args: { p_space: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          role: string
+          user_id: string
+        }[]
+      }
+      is_space_owner_or_admin: {
+        Args: { p_space_id: string }
+        Returns: boolean
+      }
+      is_space_viewer: {
+        Args: { p_space_id: string }
         Returns: boolean
       }
     }

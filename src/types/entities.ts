@@ -8,7 +8,6 @@ export interface Space {
     location?: string;
     owner_id: string;
     owner?: string | null;
-    memberCount: number;
     thumbnail_url?: string;
     created_at?: string | null; // ISO timestamp
     modified_at?: string | null; // ISO timestamp

@@ -1,10 +1,10 @@
 import React from "react";
 import AppShell from "../components/AppShell";
-import SpaceCard from "../components/SpaceCard";
+import { SpacesSection } from "../components/SpacesSection";
 import { useSpacesStore } from "@/state/spacesStore";
+import { useAuthStore } from "@/state/authStore";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { TrashIcon } from "@/components/ui/trash-icon";
 import {
   Select,
   SelectTrigger,
@@ -18,8 +18,11 @@ import { useNavigate } from "react-router-dom";
 
 const Spaces: React.FC = () => {
   const spaces = useSpacesStore((state) => state.spaces);
+  const membershipRoles = useSpacesStore((state) => state.membershipRoles);
   const fetchSpaces = useSpacesStore((state) => state.fetchSpaces);
   const removeSpace = useSpacesStore((state) => state.removeSpace);
+  const membershipCounts = useSpacesStore((state) => state.membershipCounts);
+  const currentUser = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const deletingSpace = spaces.find(s => s.id === deletingId);
@@ -37,13 +40,20 @@ const Spaces: React.FC = () => {
   // If spaces is undefined/null, or if a loading flag is set, show loading
   const isLoading = !Array.isArray(spaces) || (Array.isArray(spaces) && spaces.length === 0 && !deletingId && !locations.length);
 
-  const orderedSpaces = React.useMemo(() => {
-    return [...filteredSpaces].sort((a, b) => {
-      if (!a.name) return 1;
-      if (!b.name) return -1;
-      return a.name.localeCompare(b.name);
+  const { ownedSpaces, sharedSpaces } = React.useMemo(() => {
+    const owned: typeof spaces = [];
+    const shared: typeof spaces = [];
+    const uid = currentUser?.id;
+    filteredSpaces.forEach((s) => {
+      if (uid && s.owner_id === uid) owned.push(s); else shared.push(s);
     });
-  }, [filteredSpaces]);
+    const sorter = (a: typeof spaces[number], b: typeof spaces[number]) => {
+      if (!a.name) return 1; if (!b.name) return -1; return a.name.localeCompare(b.name);
+    };
+    owned.sort(sorter);
+    shared.sort(sorter);
+    return { ownedSpaces: owned, sharedSpaces: shared };
+  }, [filteredSpaces, currentUser?.id]);
 
   React.useEffect(() => {
     fetchSpaces();
@@ -75,51 +85,65 @@ const Spaces: React.FC = () => {
           </Select>
         )}
       </div>
-      <div className="grid gap-4">
+      <div className="flex flex-col gap-6">
         {isLoading ? (
           <Spinner size={24} label="Loading spaces..." className="py-8" />
         ) : Array.isArray(spaces) && filteredSpaces.length === 0 ? (
           <div className="text-muted-foreground">No spaces found.</div>
         ) : (
-          orderedSpaces.map((space: typeof spaces[number]) => (
-            <div key={space.id} className="relative">
-              <SpaceCard
-                {...space}
-                onOpen={() => navigate(`/spaces/${space.id}`)}
-              />
-              <button
-                className="absolute top-2 right-2 p-2 rounded-full bg-transparent text-destructive hover:bg-muted transition"
-                title="Delete space"
-                aria-label="Delete space"
-                onClick={() => setDeletingId(space.id)}
-              >
-                {/* Waste basket icon */}
-                <TrashIcon />
-              </button>
-              <AlertDialog open={!!deletingId} onOpenChange={open => !open && setDeletingId(null)}>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete the space{" "}
-                      <span className="font-semibold">{deletingSpace?.name}</span>.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className={buttonVariants({ variant: "destructive" })}
-                      onClick={() => deletingId && handleDelete(deletingId)}
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          ))
+          <>
+      <SpacesSection
+        title="Your Spaces"
+        spaces={ownedSpaces.map(s => ({
+          id: s.id,
+          name: s.name,
+          location: s.location,
+          memberCount: (membershipCounts[s.id] || 0) + 1, // include owner
+          owner: s.owner || undefined,
+          thumbnailUrl: s.thumbnail_url,
+          isShared: false,
+          onOpen: () => navigate(`/spaces/${s.id}`)
+        }))}
+      />
+      <SpacesSection
+        title="Shared With You"
+        spaces={sharedSpaces.map(s => ({
+          id: s.id,
+          name: s.name,
+          location: s.location,
+          memberCount: (membershipCounts[s.id] || 0) + (s.owner_id ? 1 : 0),
+          owner: s.owner || undefined,
+          thumbnailUrl: s.thumbnail_url,
+          isShared: true,
+          ownerName: s.owner || undefined,
+          role: membershipRoles[s.id],
+          onOpen: () => navigate(`/spaces/${s.id}`)
+        }))}
+      />
+          </>
         )}
       </div>
+      {/* Delete dialog mounted once */}
+      <AlertDialog open={!!deletingId} onOpenChange={open => !open && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the space{" "}
+              <span className="font-semibold">{deletingSpace?.name}</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className={buttonVariants({ variant: "destructive" })}
+                onClick={() => deletingId && handleDelete(deletingId)}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 };

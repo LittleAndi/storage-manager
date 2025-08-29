@@ -14,7 +14,6 @@ CREATE TABLE spaces (
   constraint spaces_owner_id_fkey foreign KEY (owner_id) references auth.users (id)
 );
 
-
 -- Table: boxes
 CREATE TABLE boxes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -45,8 +44,15 @@ CREATE TABLE space_members (
   user_id uuid REFERENCES auth.users(id) NOT NULL,
   role text DEFAULT 'viewer', -- e.g., viewer, editor
   created_at timestamptz DEFAULT now(),
+  modified_at timestamptz DEFAULT now(),
   UNIQUE (space_id, user_id)
 );
+
+-- Enable RLS on all tables
+ALTER TABLE spaces ENABLE ROW LEVEL SECURITY;
+ALTER TABLE boxes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE space_members ENABLE ROW LEVEL SECURITY;
 
 -- Create a function to set the owner full name
 CREATE OR REPLACE FUNCTION set_space_owner_full_name()
@@ -71,141 +77,243 @@ AFTER INSERT ON spaces
 FOR EACH ROW
 EXECUTE FUNCTION set_space_owner_full_name();
 
--- Enable RLS on all tables
-ALTER TABLE spaces ENABLE ROW LEVEL SECURITY;
-ALTER TABLE boxes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE space_members ENABLE ROW LEVEL SECURITY;
+-- Space members
+CREATE OR REPLACE FUNCTION public.add_space_member(
+    p_user_email text, 
+    p_space_id uuid, 
+    p_member_role text DEFAULT 'member'
+)
+RETURNS boolean
+SECURITY DEFINER
+LANGUAGE plpgsql
+AS $$
+DECLARE 
+    is_space_owner boolean;
+    target_user_id uuid;
+    requesting_user_id uuid;
+    existing_member_count integer;
+BEGIN
+    -- Get the current authenticated user's ID
+    requesting_user_id := auth.uid();
 
--- RLS Policies
+    -- Check if the requesting user is the owner of the space
+    SELECT EXISTS (
+        SELECT 1 
+        FROM spaces 
+        WHERE id = p_space_id 
+        AND owner_id = requesting_user_id
+    ) INTO is_space_owner;
 
--- Helper function
-create or replace function get_spaces_for_user(user_id uuid)
-returns setof uuid as $$
-  select id from spaces where owner_id = $1
-$$ stable language sql security definer;
+    -- If not the space owner, return false
+    IF NOT is_space_owner THEN
+        RETURN false;
+    END IF;
 
-create policy "Space owners can do whatever to boxes"
-on boxes
-for all using (
-  space_id in (select get_spaces_for_user(auth.uid()))
-);
+    -- Check if user email exists in auth.users and get their ID
+    SELECT id INTO target_user_id
+    FROM auth.users
+    WHERE email = p_user_email;
 
-CREATE OR REPLACE FUNCTION is_space_owner(space_id uuid, user_id uuid)
+    -- If user not found, return false
+    IF target_user_id IS NULL THEN
+        RETURN false;
+    END IF;
+
+    -- Make sure the user can't add themselves as members
+    IF target_user_id = requesting_user_id THEN
+        RETURN false;
+    END IF;
+
+    -- Check if the user is already a member of the space
+    SELECT COUNT(*) INTO existing_member_count
+    FROM space_members
+    WHERE space_id = p_space_id 
+      AND user_id = target_user_id;
+
+    -- If already a member, update the role
+    IF existing_member_count > 0 THEN
+        UPDATE space_members
+        SET role = p_member_role,
+            modified_at = NOW()
+        WHERE space_id = p_space_id 
+          AND user_id = target_user_id;
+        
+        RETURN true;
+    END IF;
+
+    -- Insert the new space member
+    INSERT INTO space_members (user_id, space_id, role)
+    VALUES (target_user_id, p_space_id, p_member_role);
+
+    RETURN true;
+END;
+$$;
+
+-- Grant execution permissions to authenticated users
+GRANT EXECUTE ON FUNCTION public.add_space_member(text, uuid, text) TO authenticated;
+
+-- Is the current user an owner or admin of a given space?
+-- Includes the explicit owner_id on the spaces table.
+CREATE OR REPLACE FUNCTION public.is_space_owner_or_admin(p_space_id uuid)
 RETURNS boolean
 LANGUAGE sql
 SECURITY DEFINER
-SET search_path = public
 AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM spaces
-    WHERE id = space_id
-      AND owner_id = user_id
-  );
+    SELECT EXISTS (
+        SELECT 1
+        FROM space_members sm
+        WHERE sm.space_id = p_space_id
+          AND sm.user_id = auth.uid()
+          AND sm.role IN ('owner','admin')
+        UNION
+        SELECT 1
+        FROM spaces s
+        WHERE s.id = p_space_id
+          AND s.owner_id = auth.uid()
+    );
 $$;
 
--- Spaces: owners and members can read
-CREATE POLICY "Spaces: owners and members can read"
-  ON spaces
-  FOR SELECT
-  TO authenticated
-  USING (
-    owner_id = (select auth.uid()) OR
-    EXISTS (
-      SELECT 1
-      FROM space_members
-      WHERE space_members.space_id = spaces.id
-        AND space_members.user_id = (select auth.uid())
-    )
-  );
+-- Can the current user view a space (any role, including owner)?
+CREATE OR REPLACE FUNCTION public.is_space_viewer(p_space_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM space_members sm
+        WHERE sm.space_id = p_space_id
+          AND sm.user_id = auth.uid()
+        UNION
+        SELECT 1
+        FROM spaces s
+        WHERE s.id = p_space_id
+          AND s.owner_id = auth.uid()
+    );
+$$;
 
--- Spaces: only owner can create
-CREATE POLICY "Spaces: only owner can insert"
-  ON spaces
-  FOR INSERT
-  WITH CHECK (
-    owner_id = (select auth.uid())
-  );
+-- Can the current user edit boxes in a space (owner, admin, or editor)?
+CREATE OR REPLACE FUNCTION public.can_edit_boxes(p_space_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM space_members sm
+        WHERE sm.space_id = p_space_id
+          AND sm.user_id = auth.uid()
+          AND sm.role IN ('owner','admin','editor')
+        UNION
+        SELECT 1
+        FROM spaces s
+        WHERE s.id = p_space_id
+          AND s.owner_id = auth.uid()
+    );
+$$;
 
--- Spaces: only owner can delete
-CREATE POLICY "Spaces: only owner can delete"
-  ON spaces
-  FOR DELETE
-  USING (
-    owner_id = (select auth.uid())
-  );
 
--- Spaces: members can update
-CREATE POLICY "Spaces: members can update"
-  ON spaces
-  FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM space_members
-      WHERE space_members.space_id = spaces.id
-        AND space_members.user_id = (select auth.uid())
-    )
-  );
+-- Owners / admins (and the explicit owner_id) have full CRUD on spaces
+CREATE POLICY "owners_admins_full_access"
+ON public.spaces
+FOR ALL TO authenticated
+USING (public.is_space_owner_or_admin(id))
+WITH CHECK (public.is_space_owner_or_admin(id));
 
--- Boxes: members can read
-CREATE POLICY "Boxes: members can read"
-  ON boxes
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM space_members
-      WHERE space_members.space_id = boxes.space_id
-        AND space_members.user_id = (select auth.uid())
-    )
-  );
+-- Viewers (any member) can only read
+CREATE POLICY "viewers_can_select"
+ON public.spaces
+FOR SELECT TO authenticated
+USING (public.is_space_viewer(id));
 
--- Boxes: members can modify
-CREATE POLICY "Boxes: members can modify"
-  ON boxes
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM space_members
-      WHERE space_members.space_id = boxes.space_id
-        AND space_members.user_id = (select auth.uid())
-    )
-  );
+-- Owners / admins get full CRUD on boxes
+CREATE POLICY "boxes_owner_admin_full"
+ON public.boxes
+FOR ALL TO authenticated
+USING (public.is_space_owner_or_admin(space_id))
+WITH CHECK (public.is_space_owner_or_admin(space_id));
 
--- Items: members can read
-CREATE POLICY "Items: members can read"
-  ON items
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM boxes
-      JOIN space_members ON boxes.space_id = space_members.space_id
-      WHERE boxes.id = items.box_id
-        AND space_members.user_id = (select auth.uid())
-    )
-  );
+-- Editors (owner, admin, editor) can INSERT
+CREATE POLICY "boxes_editors_insert"
+ON public.boxes
+FOR INSERT TO authenticated
+WITH CHECK (public.can_edit_boxes(space_id));
 
--- Items: members can modify
-CREATE POLICY "Items: members can modify"
-  ON items
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM boxes
-      JOIN space_members ON boxes.space_id = space_members.space_id
-      WHERE boxes.id = items.box_id
-        AND space_members.user_id = (select auth.uid())
-    )
-  );
+-- Editors can UPDATE
+CREATE POLICY "boxes_editors_update"
+ON public.boxes
+FOR UPDATE TO authenticated
+USING (public.can_edit_boxes(space_id))
+WITH CHECK (public.can_edit_boxes(space_id));
 
--- Space members: allow all to read
-CREATE POLICY "Space members: allow all to read"
-  ON space_members
-  FOR SELECT
-  USING (true);
+-- Editors can DELETE
+CREATE POLICY "boxes_editors_delete"
+ON public.boxes
+FOR DELETE TO authenticated
+USING (public.can_edit_boxes(space_id));
 
--- Space members: only owner can modify
-CREATE POLICY "Space members: only owner can modify"
-  ON space_members
-  FOR ALL
-  USING (is_space_owner(space_id, (select auth.uid())));
+-- Viewers (any member) can SELECT only
+CREATE POLICY "boxes_viewers_select"
+ON public.boxes
+FOR SELECT TO authenticated
+USING (public.is_space_viewer(space_id));
+
+
+-- Only owners / admins of a space can manage its membership rows
+CREATE POLICY "members_owner_admin_full"
+ON public.space_members
+FOR ALL TO authenticated
+USING (public.is_space_owner_or_admin(space_id))
+WITH CHECK (public.is_space_owner_or_admin(space_id));
+
+-- Other users (members) of a space can read its membership rows
+CREATE POLICY "members_others_select"
+ON public.space_members
+FOR ALL TO authenticated
+USING (public.is_space_viewer(space_id))
+WITH CHECK (public.is_space_viewer(space_id));
+
+CREATE INDEX IF NOT EXISTS idx_space_members_user_space
+    ON public.space_members(user_id, space_id, role);
+
+CREATE INDEX IF NOT EXISTS idx_spaces_owner
+    ON public.spaces(owner_id);
+
+-- List space members
+create or replace function public.get_space_members(p_space uuid)
+returns table (
+  user_id uuid,
+  display_name text,
+  avatar_url text,
+  role text
+)
+language sql
+security definer
+set search_path = public, auth
+as $$
+  select
+    sm.user_id,
+    coalesce(
+      (u.raw_user_meta_data->>'display_name'),
+      split_part(u.email, '@', 1)
+    ) as display_name,
+    (u.raw_user_meta_data->>'avatar_url') as avatar_url,
+    sm.role
+  from public.space_members sm
+  join auth.users u on u.id = sm.user_id
+  where sm.space_id = p_space
+    and (
+      -- caller is a member
+      exists (
+        select 1 from public.space_members m
+        where m.space_id = p_space and m.user_id = auth.uid()
+      )
+      -- or caller is owner
+      or exists (
+        select 1 from public.spaces s
+        where s.id = p_space and s.owner_id = auth.uid()
+      )
+    );
+$$;
+
+grant execute on function public.get_space_members(uuid) to authenticated;

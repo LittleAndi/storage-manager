@@ -44,7 +44,6 @@ const CreateSpace: React.FC = () => {
       name: data.name,
       location: data.location,
       thumbnail_url: typeof data.photo === "string" ? data.photo : undefined,
-      memberCount: 1,
       owner_id,
     };
     const id = await addSpace(newSpace);
