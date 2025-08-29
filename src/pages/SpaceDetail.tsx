@@ -5,12 +5,13 @@ import { useNavigate } from "react-router-dom";
 
 import React from "react";
 import AppShell from "../components/AppShell";
-// import MemberList from "../components/MemberList";
-import CreateBoxModal from "../components/CreateBoxModal";
 import BoxCard from "../components/BoxCard";
 import { LabelSheet } from "../components/LabelSheet";
-import './SpaceDetail.css';
+import { MemberList } from "@/components/MemberList";
+import CreateBoxModal from "../components/CreateBoxModal";
 import ShareSpaceModal from "@/components/ShareSpaceModal";
+
+import './SpaceDetail.css';
 
 const SpaceDetail: React.FC = () => {
   const { spaceId } = useParams();
@@ -58,8 +59,14 @@ const SpaceDetail: React.FC = () => {
       </button>
       <h1 className="text-2xl font-bold mb-4">{space.name}</h1>
       <div className="mb-2 text-muted-foreground">Location: {space.location}</div>
-      <div className="mb-2 text-muted-foreground">Owner: {space.owner}</div>
-      <div className="mb-2 text-muted-foreground">Members: {space.memberCount}</div>
+      <div className="mb-2">
+        <h2 className="text-sm font-semibold text-muted-foreground mb-1">Members</h2>
+        <MemberList
+          spaceId={space.id}
+          ownerId={space.owner_id}
+          ownerName={space.owner}
+        />
+      </div>
       {space.thumbnail_url && (
         <img src={space.thumbnail_url} alt={space.name} className="w-32 h-32 rounded mb-4" />
       )}

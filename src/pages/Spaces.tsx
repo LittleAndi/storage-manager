@@ -18,8 +18,10 @@ import { useNavigate } from "react-router-dom";
 
 const Spaces: React.FC = () => {
   const spaces = useSpacesStore((state) => state.spaces);
+  const membershipRoles = useSpacesStore((state) => state.membershipRoles);
   const fetchSpaces = useSpacesStore((state) => state.fetchSpaces);
   const removeSpace = useSpacesStore((state) => state.removeSpace);
+  const membershipCounts = useSpacesStore((state) => state.membershipCounts);
   const currentUser = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
@@ -90,33 +92,34 @@ const Spaces: React.FC = () => {
           <div className="text-muted-foreground">No spaces found.</div>
         ) : (
           <>
-            <SpacesSection
-              title="Your Spaces"
-              spaces={ownedSpaces.map(s => ({
-                id: s.id,
-                name: s.name,
-                location: s.location,
-                memberCount: s.memberCount,
-                owner: s.owner || undefined,
-                thumbnailUrl: s.thumbnail_url,
-                isShared: false,
-                onOpen: () => navigate(`/spaces/${s.id}`)
-              }))}
-            />
-            <SpacesSection
-              title="Shared With You"
-              spaces={sharedSpaces.map(s => ({
-                id: s.id,
-                name: s.name,
-                location: s.location,
-                memberCount: s.memberCount,
-                owner: s.owner || undefined,
-                thumbnailUrl: s.thumbnail_url,
-                isShared: true,
-                ownerName: s.owner || undefined,
-                onOpen: () => navigate(`/spaces/${s.id}`)
-              }))}
-            />
+      <SpacesSection
+        title="Your Spaces"
+        spaces={ownedSpaces.map(s => ({
+          id: s.id,
+          name: s.name,
+          location: s.location,
+          memberCount: (membershipCounts[s.id] || 0) + 1, // include owner
+          owner: s.owner || undefined,
+          thumbnailUrl: s.thumbnail_url,
+          isShared: false,
+          onOpen: () => navigate(`/spaces/${s.id}`)
+        }))}
+      />
+      <SpacesSection
+        title="Shared With You"
+        spaces={sharedSpaces.map(s => ({
+          id: s.id,
+          name: s.name,
+          location: s.location,
+          memberCount: (membershipCounts[s.id] || 0) + (s.owner_id ? 1 : 0),
+          owner: s.owner || undefined,
+          thumbnailUrl: s.thumbnail_url,
+          isShared: true,
+          ownerName: s.owner || undefined,
+          role: membershipRoles[s.id],
+          onOpen: () => navigate(`/spaces/${s.id}`)
+        }))}
+      />
           </>
         )}
       </div>

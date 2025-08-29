@@ -15,6 +15,8 @@ export interface SpaceCardProps {
   isShared?: boolean;
   /** Owner display name (tooltip) */
   ownerName?: string;
+  /** Current user's membership role when shared */
+  role?: string;
 }
 
 const SpaceCard: React.FC<SpaceCardProps> = ({
@@ -26,6 +28,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
   onOpen,
   isShared,
   ownerName,
+  role,
 }) => {
   const thumb = thumbnailUrl; // unified camelCase
   return (
@@ -56,7 +59,16 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
           )}
           <span className="font-medium line-clamp-1" title={name}>{name}</span>
         </div>
-        {isShared && <Badge variant="outline" className="mt-1">Shared</Badge>}
+        {isShared && (
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <Badge variant="outline">Shared</Badge>
+            {role && (
+              <Badge variant="secondary" title={`Your role: ${role}`} className="uppercase tracking-wide text-[10px]">
+                {role}
+              </Badge>
+            )}
+          </div>
+        )}
         {location && <p className="text-sm text-muted-foreground mt-1">{location}</p>}
         <p className="text-xs text-gray-400 mt-1">Members: {memberCount ?? 0} {owner && (`| Owner: ${owner}`)}</p>
       </div>

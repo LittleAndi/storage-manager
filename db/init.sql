@@ -152,17 +152,6 @@ $$;
 -- Grant execution permissions to authenticated users
 GRANT EXECUTE ON FUNCTION public.add_space_member(text, uuid, text) TO authenticated;
 
--- Policy on space_members
-create policy "Owners can modify members"
-on "public"."space_members"
-to public
-using (
-  (( SELECT auth.uid() AS uid) IN ( SELECT spaces.owner_id
-   FROM spaces
-  WHERE (space_members.space_id = spaces.id)))
-);
-
-
 -- Is the current user an owner or admin of a given space?
 -- Includes the explicit owner_id on the spaces table.
 CREATE OR REPLACE FUNCTION public.is_space_owner_or_admin(p_space_id uuid)
@@ -277,9 +266,54 @@ FOR ALL TO authenticated
 USING (public.is_space_owner_or_admin(space_id))
 WITH CHECK (public.is_space_owner_or_admin(space_id));
 
+-- Other users (members) of a space can read its membership rows
+CREATE POLICY "members_others_select"
+ON public.space_members
+FOR ALL TO authenticated
+USING (public.is_space_viewer(space_id))
+WITH CHECK (public.is_space_viewer(space_id));
 
 CREATE INDEX IF NOT EXISTS idx_space_members_user_space
     ON public.space_members(user_id, space_id, role);
 
 CREATE INDEX IF NOT EXISTS idx_spaces_owner
     ON public.spaces(owner_id);
+
+-- List space members
+create or replace function public.get_space_members(p_space uuid)
+returns table (
+  user_id uuid,
+  display_name text,
+  avatar_url text,
+  role text
+)
+language sql
+security definer
+set search_path = public, auth
+as $$
+  select
+    sm.user_id,
+    coalesce(
+      (u.raw_user_meta_data->>'display_name'),
+      split_part(u.email, '@', 1)
+    ) as display_name,
+    (u.raw_user_meta_data->>'avatar_url') as avatar_url,
+    sm.role
+  from public.space_members sm
+  join auth.users u on u.id = sm.user_id
+  where sm.space_id = p_space
+    and (
+      -- caller is a member
+      exists (
+        select 1 from public.space_members m
+        where m.space_id = p_space and m.user_id = auth.uid()
+      )
+      -- or caller is owner
+      or exists (
+        select 1 from public.spaces s
+        where s.id = p_space and s.owner_id = auth.uid()
+      )
+    );
+$$;
+
+grant execute on function public.get_space_members(uuid) to authenticated;

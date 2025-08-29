@@ -21,7 +21,6 @@ export function dbSpaceToAppSpace(
     thumbnail_url: db.thumbnail_url ?? undefined,
     created_at: db.created_at,
     modified_at: db.modified_at,
-    memberCount: 0,
   };
 }
 
@@ -53,7 +52,7 @@ export function newSpaceToDbSpace(
     thumbnail_url: space.thumbnail_url ?? null,
     created_at: now,
     modified_at: now,
-    // id and memberCount are not included for insert
+    // id are not included for insert
   };
 }
 
