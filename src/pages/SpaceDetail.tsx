@@ -12,6 +12,7 @@ import CreateBoxModal from "../components/CreateBoxModal";
 import ShareSpaceModal from "@/components/ShareSpaceModal";
 
 import './SpaceDetail.css';
+import { Button } from "@/components/ui/button";
 
 const SpaceDetail: React.FC = () => {
   const { spaceId } = useParams();
@@ -50,13 +51,13 @@ const SpaceDetail: React.FC = () => {
 
   return (
     <AppShell>
-      <button
-        className="mb-4 px-4 py-2 rounded bg-primary text-primary-foreground shadow-sm flex items-center gap-2 w-fit"
+      <Button
+        className="mb-4 flex items-center gap-2 w-fit"
         onClick={() => navigate('/spaces')}
         aria-label="Back to spaces"
       >
         <span aria-hidden="true">←</span> <span>Back to Spaces</span>
-      </button>
+      </Button>
       <h1 className="text-2xl font-bold mb-4">{space.name}</h1>
       <div className="mb-2 text-muted-foreground">Location: {space.location}</div>
       <div className="mb-2">
@@ -71,26 +72,26 @@ const SpaceDetail: React.FC = () => {
         <img src={space.thumbnail_url} alt={space.name} className="w-32 h-32 rounded mb-4" />
       )}
       <div className="mb-4 flex gap-2 flex-wrap">
-        <button
+        <Button
           ref={createBoxButtonRef}
-          className="px-4 py-2 rounded bg-secondary text-secondary-foreground shadow-sm"
+          variant="secondary"
           onClick={openCreateBox}
         >
           + Create Box
-        </button>
-        <button
-          className="px-4 py-2 rounded bg-secondary text-secondary-foreground shadow-sm"
+        </Button>
+        <Button
+          variant="secondary"
           onClick={openShareSpace}
         >
           🔗 Share Space
-        </button>
-        <button
-          className="px-4 py-2 rounded shadow-sm"
+        </Button>
+        <Button
+          variant="outline"
           onClick={() => setShowLabelSheet(v => !v)}
           aria-pressed={showLabelSheet}
         >
           {showLabelSheet ? '👁️ View Boxes' : '🏷️ View Labels'}
-        </button>
+        </Button>
       </div>
       <CreateBoxModal open={createBoxOpen} onClose={closeCreateBox} />
       <ShareSpaceModal open={shareSpaceOpen} onClose={closeShareSpace} spaceId={space.id} />
@@ -123,14 +124,14 @@ const SpaceDetail: React.FC = () => {
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-semibold">Label Sheet</h2>
             <div className="flex gap-2">
-              <button
-                className="px-3 py-1 rounded bg-primary text-primary-foreground"
+              <Button
+                size="sm"
                 onClick={() => {
                   window.print();
                 }}
               >
                 🖨️ Print Labels
-              </button>
+              </Button>
             </div>
           </div>
           <div className="print-area">
