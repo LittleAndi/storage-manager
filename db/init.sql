@@ -179,17 +179,19 @@ RETURNS boolean
 LANGUAGE sql
 SECURITY DEFINER
 AS $$
-    SELECT EXISTS (
-        SELECT 1
-        FROM space_members sm
-        WHERE sm.space_id = p_space_id
-          AND sm.user_id = auth.uid()
-        UNION
-        SELECT 1
-        FROM spaces s
-        WHERE s.id = p_space_id
-          AND s.owner_id = auth.uid()
-    );
+    SELECT COALESCE((
+        SELECT EXISTS (
+            SELECT 1
+            FROM space_members sm
+            WHERE sm.space_id = p_space_id
+              AND sm.user_id = auth.uid()
+            UNION
+            SELECT 1
+            FROM spaces s
+            WHERE s.id = p_space_id
+              AND s.owner_id = auth.uid()
+        )
+    ), false);
 $$;
 
 -- Can the current user edit boxes in a space (owner, admin, or editor)?
@@ -214,13 +216,39 @@ $$;
 
 
 -- Owners / admins (and the explicit owner_id) have full CRUD on spaces
-CREATE POLICY "owners_admins_full_access"
+DROP POLICY IF EXISTS "owners_admins_select" ON public.spaces;
+DROP POLICY IF EXISTS "owners_admins_update" ON public.spaces;
+DROP POLICY IF EXISTS "owners_admins_delete" ON public.spaces;
+DROP POLICY IF EXISTS "users_can_insert_spaces" ON public.spaces;
+
+CREATE POLICY "owners_admins_select"
 ON public.spaces
-FOR ALL TO authenticated
+FOR SELECT TO authenticated
 USING (public.is_space_owner_or_admin(id))
 WITH CHECK (public.is_space_owner_or_admin(id));
 
+CREATE POLICY "owners_admins_update"
+ON public.spaces
+FOR UPDATE TO authenticated
+USING (public.is_space_owner_or_admin(id))
+WITH CHECK (public.is_space_owner_or_admin(id));
+
+CREATE POLICY "owners_admins_delete"
+ON public.spaces
+FOR DELETE TO authenticated
+USING (public.is_space_owner_or_admin(id))
+WITH CHECK (public.is_space_owner_or_admin(id));
+
+-- Users can insert spaces
+CREATE POLICY "users_can_insert_spaces"
+ON public.spaces
+FOR INSERT TO authenticated
+WITH CHECK ((owner_id = auth.uid()));
+
+
 -- Viewers (any member) can only read
+DROP POLICY IF EXISTS "viewers_can_select" on public.spaces
+
 CREATE POLICY "viewers_can_select"
 ON public.spaces
 FOR SELECT TO authenticated
@@ -317,3 +345,20 @@ as $$
 $$;
 
 grant execute on function public.get_space_members(uuid) to authenticated;
+
+
+-- List and recreate policies
+SELECT 'DROP POLICY IF EXISTS "' || policyname || '" ON ' || schemaname || '.' || tablename || ';' as drop_policy_sql
+  , 'CREATE POLICY "' || policyname || '" ON ' || schemaname || '.' || tablename || 
+    ' FOR ' || cmd || ' TO ' || roles[1] ||
+    case
+      when qual is not null then ' USING (' || qual || ')'
+      else ''
+    end ||
+    case
+      when with_check is not null then ' WITH CHECK (' || with_check || ')'
+      else ''
+    end ||
+    ';' as create_policy_sql
+FROM pg_policies
+ORDER BY schemaname, tablename, policyname;
