@@ -76,7 +76,6 @@ const SpaceDetail: React.FC = () => {
       <div className="mb-4 flex gap-2 flex-wrap">
         <Button
           ref={createBoxButtonRef}
-          variant="secondary"
           onClick={openCreateBox}
         >
           + Create Box
