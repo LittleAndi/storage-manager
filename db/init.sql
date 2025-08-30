@@ -322,7 +322,7 @@ as $$
   select
     sm.user_id,
     coalesce(
-      (u.raw_user_meta_data->>'display_name'),
+      (u.raw_user_meta_data->>'name'),
       split_part(u.email, '@', 1)
     ) as display_name,
     (u.raw_user_meta_data->>'avatar_url') as avatar_url,
@@ -330,6 +330,30 @@ as $$
   from public.space_members sm
   join auth.users u on u.id = sm.user_id
   where sm.space_id = p_space
+    and (
+      -- caller is a member
+      exists (
+        select 1 from public.space_members m
+        where m.space_id = p_space and m.user_id = auth.uid()
+      )
+      -- or caller is owner
+      or exists (
+        select 1 from public.spaces s
+        where s.id = p_space and s.owner_id = auth.uid()
+      )
+    )
+  UNION
+  select
+    s.owner_id,
+    coalesce(
+      (u.raw_user_meta_data->>'name'),
+      split_part(u.email, '@', 1)
+    ) as display_name,
+    (u.raw_user_meta_data->>'avatar_url') as avatar_url,
+    'owner'
+  from public.spaces s
+  inner join auth.users u on u.id = s.owner_id
+  where s.id = p_space
     and (
       -- caller is a member
       exists (

@@ -64,11 +64,7 @@ const SpaceDetail: React.FC = () => {
       <div className="mb-2 text-muted-foreground">Location: {space.location}</div>
       <div className="mb-2">
         <h2 className="text-sm font-semibold text-muted-foreground mb-1">Members</h2>
-        <MemberList
-          spaceId={space.id}
-          ownerId={space.owner_id}
-          ownerName={space.owner}
-        />
+        <MemberList spaceId={space.id} />
       </div>
       {space.thumbnail_url && (
         <img src={space.thumbnail_url} alt={space.name} className="w-32 h-32 rounded mb-4" />

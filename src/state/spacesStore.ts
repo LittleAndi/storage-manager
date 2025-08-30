@@ -15,7 +15,6 @@ interface SpacesState {
   addSpace: (space: NewSpace) => Promise<string | null>;
   updateSpace: (space: Space) => void;
   removeSpace: (id: string) => void;
-  // NEW: member fetching state
   membersBySpace: Record<string, SpaceMember[]>;
   memberLoading: Record<string, boolean>;
   memberErrors: Record<string, string | null>;

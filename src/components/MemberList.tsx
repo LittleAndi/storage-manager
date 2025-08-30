@@ -11,7 +11,7 @@ interface MemberListProps {
 const roleLabel = (r: string | null) =>
   !r ? "member" : r.replace(/^space_/, "").replace(/_/g, " ");
 
-export const MemberList: React.FC<MemberListProps> = ({ spaceId, ownerId, ownerName }) => {
+export const MemberList: React.FC<MemberListProps> = ({ spaceId }) => {
   const fetchSpaceMembers = useSpacesStore(s => s.fetchSpaceMembers);
   const membersBySpace = useSpacesStore(s => s.membersBySpace);
   const memberLoading = useSpacesStore(s => s.memberLoading);
@@ -25,22 +25,12 @@ export const MemberList: React.FC<MemberListProps> = ({ spaceId, ownerId, ownerN
   const error = memberErrors[spaceId] || null;
   const rawMembers: SpaceMember[] = membersBySpace[spaceId] || [];
 
-  // Build list including owner first
+  // Build list, mark owner
   type MemberListItem = SpaceMember & { isOwner?: boolean };
-  const members: MemberListItem[] = [];
-  if (ownerId) {
-    members.push({
-      user_id: ownerId,
-      role: "owner",
-      display_name: ownerName || "Owner",
-      avatar_url: null,
-      isOwner: true,
-    });
-  }
-  for (const m of rawMembers) {
-    if (m.user_id === ownerId) continue;
-    members.push(m);
-  }
+  const members: MemberListItem[] = rawMembers.map(m => ({
+    ...m,
+    isOwner: m.role === 'owner',
+  }));
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading members…</div>;
   if (error) return <div className="text-sm text-destructive">Members error: {error}</div>;
