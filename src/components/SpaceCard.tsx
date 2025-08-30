@@ -1,6 +1,8 @@
 import React from "react";
 import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { TrashIcon } from "@/components/ui/trash-icon";
 
 export interface SpaceCardProps {
   id: string;
@@ -17,6 +19,8 @@ export interface SpaceCardProps {
   ownerName?: string;
   /** Current user's membership role when shared */
   role?: string;
+  /** Delete handler (only for owned spaces) */
+  onDelete?: () => void;
 }
 
 const SpaceCard: React.FC<SpaceCardProps> = ({
@@ -29,16 +33,32 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
   isShared,
   ownerName,
   role,
+  onDelete,
 }) => {
   const thumb = thumbnailUrl; // unified camelCase
   return (
     <div
-      className={`bg-white rounded shadow p-4 flex items-center cursor-pointer transition-colors ${
+      className={`relative group bg-white rounded shadow p-4 flex items-center cursor-pointer transition-colors ${
         isShared ? "bg-indigo-50 dark:bg-indigo-900/20" : "bg-background hover:bg-accent/50"
       }`}
       onClick={onOpen}
       aria-label={`Open space ${name}`}
     >
+      {!isShared && onDelete && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="absolute top-2 right-2 h-7 w-7 p-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 transition-opacity"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          aria-label={`Delete space ${name}`}
+        >
+          <TrashIcon size={16} aria-hidden="true" />
+        </Button>
+      )}
       {thumb && (
         <img
           src={thumb}

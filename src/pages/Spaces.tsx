@@ -102,7 +102,8 @@ const Spaces: React.FC = () => {
           owner: s.owner || undefined,
           thumbnailUrl: s.thumbnail_url,
           isShared: false,
-          onOpen: () => navigate(`/spaces/${s.id}`)
+          onOpen: () => navigate(`/spaces/${s.id}`),
+          onDelete: () => setDeletingId(s.id)
         }))}
       />
       <SpacesSection
