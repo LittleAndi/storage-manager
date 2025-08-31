@@ -29,16 +29,9 @@
 
 # Existing shadcn/ui primitives and additional internal UI components with potential additional usage spots
 
-- `Button` (also `buttonVariants`)  
-  - Replace raw <a> sidebar nav links in `AppShell` with asChild Buttons for consistent focus states.  
-  - Convert emoji action buttons (Print / View Labels toggle / Back arrow) in `SpaceDetail` to icon + text Buttons (ghost / outline variants).  
-  - Use small variant for Google/Facebook auth buttons in `Auth` to better align vertical rhythm.  
-  - Add destructive variant to delete space action in `Spaces` AlertDialog (already partially styled) and future box/item delete flows.
-
 - `Badge`  
-  - Show location as a Badge on each space card in `SpaceCard`.  
+  - Show location as a Badge on each space card in `SpaceCard` (skip this for now, maybe later).
   - Tag roles in activity entries (future) in `ActivityFeed`.  
-  - Display box counts (e.g. “3 boxes”) in sections of `SpacesSection` if added.
 
 - Card suite: `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `CardAction`  
   - Wrap dashboard stats (future) in `Dashboard`.  
@@ -53,7 +46,6 @@
 - `AlertDialog` family (`AlertDialogContent`, `AlertDialogHeader`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogFooter`, `AlertDialogAction`, `AlertDialogCancel`)  
   - Confirm leaving unsaved form in `CreateSpace`.  
   - Confirm box deletion in future `BoxDetail`.  
-  - Confirm logout instead of immediate action in `AppShell` (optional).
 
 - `Sheet` (`SheetTrigger`, `SheetContent`, `SheetHeader`, `SheetTitle`, `SheetDescription`, `SheetFooter`, `SheetClose`)  
   - Mobile filter / sort panel on spaces list in `Spaces`.  
@@ -67,20 +59,11 @@
 
 - Form primitives: `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`  
   - Apply to future item creation form in `AddItem`.  
-  - Apply to box creation form in `CreateBox` (if not already).  
   - Use `FormDescription` for optional photo guidance in `CreateSpace`.
-
-- `Input`  
-  - Replace any plain <input> elements inside modals (e.g., email input in `ShareSpaceModal` if not already the custom Input).  
-  - Search bar (future global) in `AppShell`.
 
 - `Label`  
   - Associate with future checkboxes / switches in bulk selection UIs in `BulkOperations`.  
   - Enhance accessibility of file upload field in `CreateSpace`.
-
-- Avatar suite: `Avatar`, `AvatarImage`, `AvatarFallback`  
-  - Member list avatars (current custom div) in `MemberList` for visual consistency.  
-  - Space owner avatar in cards (optional) in `SpaceCard`.
 
 - Feedback / utility: `Spinner`  
   - Inline loading inside action Buttons (add spinner before text) during async mutations in forms (`CreateSpace`, `ShareSpaceModal`).  
@@ -88,6 +71,3 @@
 
 - Notifications: `Toaster`  
   - Already mounted in `App`; expand usage for success/error messaging in create/share/delete flows (centralize via helper).
-
-- Icons: `TrashIcon`  
-  - Replace hard‑coded delete icon (future) beside each space or box in list (e.g., integrate into actions in `Spaces` and boxes grid in `SpaceDetail`).

@@ -99,10 +99,12 @@ const Spaces: React.FC = () => {
           name: s.name,
           location: s.location,
           memberCount: (membershipCounts[s.id] || 0) + 1, // include owner
+          boxCount: s.boxCount,
           owner: s.owner || undefined,
           thumbnailUrl: s.thumbnail_url,
           isShared: false,
-          onOpen: () => navigate(`/spaces/${s.id}`)
+          onOpen: () => navigate(`/spaces/${s.id}`),
+          onDelete: () => setDeletingId(s.id)
         }))}
       />
       <SpacesSection
@@ -112,6 +114,7 @@ const Spaces: React.FC = () => {
           name: s.name,
           location: s.location,
           memberCount: (membershipCounts[s.id] || 0) + (s.owner_id ? 1 : 0),
+          boxCount: s.boxCount,
           owner: s.owner || undefined,
           thumbnailUrl: s.thumbnail_url,
           isShared: true,

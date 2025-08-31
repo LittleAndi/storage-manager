@@ -52,21 +52,19 @@ const SpaceDetail: React.FC = () => {
   return (
     <AppShell>
       <Button
+        variant="ghost"
         className="mb-4 flex items-center gap-2 w-fit"
         onClick={() => navigate('/spaces')}
         aria-label="Back to spaces"
       >
-        <span aria-hidden="true">←</span> <span>Back to Spaces</span>
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/><path d="M21 12H9"/></svg>
+        <span>Back to Spaces</span>
       </Button>
       <h1 className="text-2xl font-bold mb-4">{space.name}</h1>
       <div className="mb-2 text-muted-foreground">Location: {space.location}</div>
       <div className="mb-2">
         <h2 className="text-sm font-semibold text-muted-foreground mb-1">Members</h2>
-        <MemberList
-          spaceId={space.id}
-          ownerId={space.owner_id}
-          ownerName={space.owner}
-        />
+        <MemberList spaceId={space.id} />
       </div>
       {space.thumbnail_url && (
         <img src={space.thumbnail_url} alt={space.name} className="w-32 h-32 rounded mb-4" />
@@ -74,30 +72,42 @@ const SpaceDetail: React.FC = () => {
       <div className="mb-4 flex gap-2 flex-wrap">
         <Button
           ref={createBoxButtonRef}
-          variant="secondary"
           onClick={openCreateBox}
         >
           + Create Box
         </Button>
         <Button
-          variant="secondary"
+          variant="ghost"
           onClick={openShareSpace}
+          className="gap-2"
         >
-          🔗 Share Space
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98"/><path d="M15.41 6.51L8.59 10.49"/></svg>
+          <span>Share Space</span>
         </Button>
         <Button
           variant="outline"
           onClick={() => setShowLabelSheet(v => !v)}
           aria-pressed={showLabelSheet}
         >
-          {showLabelSheet ? '👁️ View Boxes' : '🏷️ View Labels'}
+          {showLabelSheet ? (
+            <span className="flex items-center gap-2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>View Boxes</span>
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 13.59V3H10.41L3 10.41l9.59 9.59L20 13.59Z" />
+                <circle cx="15" cy="9" r="1.25" />
+              </svg>
+              <span>View Labels</span>
+            </span>
+          )}
         </Button>
       </div>
       <CreateBoxModal open={createBoxOpen} onClose={closeCreateBox} />
       <ShareSpaceModal open={shareSpaceOpen} onClose={closeShareSpace} spaceId={space.id} />
       
-      {/* TODO: Members, boxes list, map */}
-      {/* <MemberList members={[]} /> */}
       {!showLabelSheet ? (
         <div className="mt-6">
           <h2 className="text-lg font-semibold mb-2">Boxes</h2>
@@ -121,18 +131,20 @@ const SpaceDetail: React.FC = () => {
         </div>
       ) : (
         <div className="mt-6">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center mb-2">
             <h2 className="text-lg font-semibold">Label Sheet</h2>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={() => {
-                  window.print();
-                }}
-              >
-                🖨️ Print Labels
-              </Button>
-            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                window.print();
+              }}
+              className="gap-2 ml-40"
+              aria-label="Print labels"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+              <span>Print Labels</span>
+            </Button>
           </div>
           <div className="print-area">
             <LabelSheet boxes={boxes} spaceId={spaceId} />

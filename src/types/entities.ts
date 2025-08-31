@@ -11,6 +11,7 @@ export interface Space {
     thumbnail_url?: string;
     created_at?: string | null; // ISO timestamp
     modified_at?: string | null; // ISO timestamp
+    boxCount?: number; // Number of boxes in this space
 }
 
 export interface UserProfile {

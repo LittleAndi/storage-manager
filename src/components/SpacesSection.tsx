@@ -23,7 +23,7 @@ export function SpacesSection({ title, spaces, emptyMessage }: SpacesSectionProp
   }
   return (
     <section className="space-y-2">
-      <h3 className="sticky top-0 z-10 bg-background/80 py-1 text-xs font-semibold uppercase tracking-wide backdrop-blur">
+      <h3 className="sticky top-0 z-10 bg-background/80 py-1 text-xs font-semibold uppercase tracking-wide backdrop-blur flex items-center gap-2">
         {title} <span className="text-muted-foreground">({spaces.length})</span>
       </h3>
       <div className="grid gap-2">
