@@ -61,10 +61,6 @@
   - Apply to future item creation form in `AddItem`.  
   - Use `FormDescription` for optional photo guidance in `CreateSpace`.
 
-- `Input`  
-  - Replace any plain <input> elements inside modals (e.g., email input in `ShareSpaceModal` if not already the custom Input).  
-  - Search bar (future global) in `AppShell`.
-
 - `Label`  
   - Associate with future checkboxes / switches in bulk selection UIs in `BulkOperations`.  
   - Enhance accessibility of file upload field in `CreateSpace`.

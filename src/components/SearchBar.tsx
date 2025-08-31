@@ -1,4 +1,5 @@
 import React from "react";
+import { Input } from "@/components/ui/input";
 
 interface SearchBarProps {
   value: string;
@@ -7,9 +8,9 @@ interface SearchBarProps {
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, placeholder }) => (
-  <input
+  <Input
     type="search"
-    className="w-full p-2 border rounded"
+    className="w-full"
     value={value}
     onChange={e => onChange(e.target.value)}
     placeholder={placeholder || "Search..."}
