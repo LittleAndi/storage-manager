@@ -65,10 +65,6 @@
   - Associate with future checkboxes / switches in bulk selection UIs in `BulkOperations`.  
   - Enhance accessibility of file upload field in `CreateSpace`.
 
-- Avatar suite: `Avatar`, `AvatarImage`, `AvatarFallback`  
-  - Member list avatars (current custom div) in `MemberList` for visual consistency.  
-  - Space owner avatar in cards (optional) in `SpaceCard`.
-
 - Feedback / utility: `Spinner`  
   - Inline loading inside action Buttons (add spinner before text) during async mutations in forms (`CreateSpace`, `ShareSpaceModal`).  
   - Loading placeholder in boxes grid in `SpaceDetail` while fetching boxes.
