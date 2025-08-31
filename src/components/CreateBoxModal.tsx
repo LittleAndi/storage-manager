@@ -1,4 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
+import { useForm } from "react-hook-form";
+import {
+  Form,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+} from "@/components/ui/form";
 import { useBoxesStore } from "@/state/boxesStore";
 import type { NewBox } from "@/types/entities";
 import { useNavigate, useParams } from "react-router-dom";
@@ -13,30 +21,29 @@ interface CreateBoxModalProps {
 }
 
 const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate }) => {
-  const [name, setName] = useState("");
-  const [location, setLocation] = useState("");
-  const [content, setContent] = useState("");
+  const form = useForm({
+    defaultValues: {
+      name: "",
+      location: "",
+      content: "",
+    },
+  });
   const { spaceId } = useParams();
   const navigate = useNavigate();
   const addBox = useBoxesStore((state) => state.addBox);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: { name: string; location: string; content?: string }) => {
     if (!spaceId) return;
-    // Save box using store
     const newBox: NewBox = {
-      name,
-      location,
+      name: values.name,
+      location: values.location,
       space_id: spaceId,
-      content,
+      content: values.content,
     };
     await addBox(newBox);
-    if (onCreate) onCreate({ name, location, content });
-    setName("");
-    setLocation("");
-    setContent("");
+    if (onCreate) onCreate(values);
+    form.reset();
     onClose();
-    // Optionally navigate to the new box detail page after creation
   };
 
   const handleClose = () => {
@@ -52,46 +59,53 @@ const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Create New Box</AlertDialogTitle>
-          <AlertDialogDescription></AlertDialogDescription>
+          <AlertDialogDescription />
         </AlertDialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label htmlFor="box-name" className="block text-sm font-medium mb-1">Box Name</label>
-            <Input
-              id="box-name"
-              placeholder="Enter box name"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              required
-              autoFocus
-            />
-          </div>
-          <div>
-            <label htmlFor="box-location" className="block text-sm font-medium mb-1">Location</label>
-            <Input
-              id="box-location"
-              placeholder="Enter location (optional)"
-              value={location}
-              onChange={e => setLocation(e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="box-content" className="block text-sm font-medium mb-1">Content</label>
-            <textarea
-              id="box-content"
-              placeholder="Enter box content (optional)"
-              value={content}
-              onChange={e => setContent(e.target.value)}
-              rows={5}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              style={{ resize: "vertical" }}
-            />
-          </div>
-          <AlertDialogFooter>
-            <Button type="submit">Create</Button>
-            <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
-          </AlertDialogFooter>
-        </form>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
+            <FormItem>
+              <FormLabel htmlFor="box-name">Box Name</FormLabel>
+              <FormControl>
+                <Input
+                  id="box-name"
+                  placeholder="Enter box name"
+                  {...form.register("name", { required: true })}
+                  autoFocus
+                />
+              </FormControl>
+              <FormDescription>Required. Give your box a descriptive name.</FormDescription>
+            </FormItem>
+            <FormItem>
+              <FormLabel htmlFor="box-location">Location</FormLabel>
+              <FormControl>
+                <Input
+                  id="box-location"
+                  placeholder="Enter location (optional)"
+                  {...form.register("location")}
+                />
+              </FormControl>
+              <FormDescription>Optional. Where is this box stored?</FormDescription>
+            </FormItem>
+            <FormItem>
+              <FormLabel htmlFor="box-content">Content</FormLabel>
+              <FormControl>
+                <textarea
+                  id="box-content"
+                  placeholder="Enter box content (optional)"
+                  {...form.register("content")}
+                  rows={5}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  style={{ resize: "vertical" }}
+                />
+              </FormControl>
+              <FormDescription>Optional. What does this box contain?</FormDescription>
+            </FormItem>
+            <AlertDialogFooter>
+              <Button type="submit">Create</Button>
+              <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+            </AlertDialogFooter>
+          </form>
+        </Form>
       </AlertDialogContent>
     </AlertDialog>
   );

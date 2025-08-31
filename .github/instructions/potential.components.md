@@ -59,7 +59,6 @@
 
 - Form primitives: `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`  
   - Apply to future item creation form in `AddItem`.  
-  - Apply to box creation form in `CreateBox` (if not already).  
   - Use `FormDescription` for optional photo guidance in `CreateSpace`.
 
 - `Input`  
