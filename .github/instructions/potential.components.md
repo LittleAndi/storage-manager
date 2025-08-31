@@ -30,7 +30,7 @@
 # Existing shadcn/ui primitives and additional internal UI components with potential additional usage spots
 
 - `Badge`  
-  - Show location as a Badge on each space card in `SpaceCard`.  
+  - Show location as a Badge on each space card in `SpaceCard` (skip this for now, maybe later).
   - Tag roles in activity entries (future) in `ActivityFeed`.  
   - Display box counts (e.g. “3 boxes”) in sections of `SpacesSection` if added.
 
