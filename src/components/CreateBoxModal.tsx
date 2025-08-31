@@ -12,6 +12,7 @@ import type { NewBox } from "@/types/entities";
 import { useNavigate, useParams } from "react-router-dom";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
 interface CreateBoxModalProps {
@@ -89,13 +90,11 @@ const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate
             <FormItem>
               <FormLabel htmlFor="box-content">Content</FormLabel>
               <FormControl>
-                <textarea
+                <Textarea
                   id="box-content"
                   placeholder="Enter box content (optional)"
                   {...form.register("content")}
                   rows={5}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  style={{ resize: "vertical" }}
                 />
               </FormControl>
               <FormDescription>Optional. What does this box contain?</FormDescription>
