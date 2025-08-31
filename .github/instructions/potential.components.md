@@ -29,9 +29,6 @@
 
 # Existing shadcn/ui primitives and additional internal UI components with potential additional usage spots
 
-- `Button` (also `buttonVariants`)  
-  - Add destructive variant to delete space action in `Spaces` AlertDialog (already partially styled) and future box/item delete flows.
-
 - `Badge`  
   - Show location as a Badge on each space card in `SpaceCard`.  
   - Tag roles in activity entries (future) in `ActivityFeed`.  
