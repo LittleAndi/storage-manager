@@ -9,6 +9,7 @@ export interface SpaceCardProps {
   name: string;
   location?: string;
   memberCount?: number;
+  boxCount?: number;
   owner?: string | null;
   /** camelCase variant (internal UI prop) */
   thumbnailUrl?: string;
@@ -27,6 +28,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
   name,
   location,
   memberCount,
+  boxCount,
   owner,
   thumbnailUrl,
   onOpen,
@@ -78,6 +80,11 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
             </span>
           )}
           <span className="font-medium line-clamp-1" title={name}>{name}</span>
+          {typeof boxCount === "number" && (
+            <Badge variant="secondary" className="ml-1">
+              {boxCount} {boxCount === 1 ? "box" : "boxes"}
+            </Badge>
+          )}
         </div>
         {isShared && (
           <div className="flex items-center gap-2 mt-1 flex-wrap">

@@ -40,13 +40,25 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
   fetchSpaces: async () => {
     set({ loading: true, error: null });
     try {
-      const { data, error } = await supabase.from("spaces").select();
+      // Fetch spaces with box counts using Supabase aggregate
+      const { data, error } = await supabase
+        .from("spaces")
+        .select(`*, boxes(count)`);
       if (error) {
         set({ error: error.message, loading: false });
         return;
       }
-      const spaces: Space[] = (data || []).map(dbSpaceToAppSpace);
+      // Map spaces and attach boxCount
+      const spaces: Space[] = (data || []).map((
+        space: Database["public"]["Tables"]["spaces"]["Row"] & {
+          boxes?: { count: number }[];
+        },
+      ) => ({
+        ...dbSpaceToAppSpace(space),
+        boxCount: space.boxes?.[0]?.count ?? 0,
+      }));
 
+      // Membership roles/counts logic unchanged
       const membershipRoles: Record<string, string> = {};
       const membershipCounts: Record<string, number> = {};
       try {
@@ -56,12 +68,9 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
         if (!memberError && memberRows) {
           for (const r of memberRows) {
             if (r.space_id) {
-              // Count (non-owner) members
               membershipCounts[r.space_id] =
                 (membershipCounts[r.space_id] || 0) + 1;
               if (r.role) {
-                // Role of current user (will be overwritten only if the row belongs to current user;
-                // if you need to scope to current user, include user_id in select and compare)
                 membershipRoles[r.space_id] = r.role;
               }
             }

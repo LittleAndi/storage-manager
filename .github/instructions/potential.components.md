@@ -32,7 +32,6 @@
 - `Badge`  
   - Show location as a Badge on each space card in `SpaceCard` (skip this for now, maybe later).
   - Tag roles in activity entries (future) in `ActivityFeed`.  
-  - Display box counts (e.g. “3 boxes”) in sections of `SpacesSection` if added.
 
 - Card suite: `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `CardAction`  
   - Wrap dashboard stats (future) in `Dashboard`.  
