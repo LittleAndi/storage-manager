@@ -71,6 +71,3 @@
 
 - Notifications: `Toaster`  
   - Already mounted in `App`; expand usage for success/error messaging in create/share/delete flows (centralize via helper).
-
-- Icons: `TrashIcon`  
-  - Replace hard‑coded delete icon (future) beside each space or box in list (e.g., integrate into actions in `Spaces` and boxes grid in `SpaceDetail`).
