@@ -46,7 +46,6 @@
 - `AlertDialog` family (`AlertDialogContent`, `AlertDialogHeader`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogFooter`, `AlertDialogAction`, `AlertDialogCancel`)  
   - Confirm leaving unsaved form in `CreateSpace`.  
   - Confirm box deletion in future `BoxDetail`.  
-  - Confirm logout instead of immediate action in `AppShell` (optional).
 
 - `Sheet` (`SheetTrigger`, `SheetContent`, `SheetHeader`, `SheetTitle`, `SheetDescription`, `SheetFooter`, `SheetClose`)  
   - Mobile filter / sort panel on spaces list in `Spaces`.  

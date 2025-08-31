@@ -1,5 +1,15 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
   SheetTrigger,
@@ -22,6 +32,7 @@ const navLinks = [
 ];
 
 const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const setToken = useAuthStore((state) => state.setToken);
@@ -32,6 +43,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     setUser(null);
     setToken(null);
     toast.success("Logged out successfully");
+    setLogoutDialogOpen(false);
   };
 
   const isActive = (href: string) =>
@@ -107,7 +119,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   {user && (
                     <li>
                       <Button
-                        onClick={handleLogout}
+                        onClick={() => setLogoutDialogOpen(true)}
                         aria-label="Logout"
                         variant="destructive"
                         className="w-full mt-8"
@@ -140,13 +152,29 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               {user && (
                 <li>
                   <Button
-                    onClick={handleLogout}
+                    onClick={() => setLogoutDialogOpen(true)}
                     aria-label="Logout"
                     variant="destructive"
                     className="w-full mt-8"
                   >
                     Logout
                   </Button>
+                  <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm logout</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to log out?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={handleLogout}>
+                          Logout
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </li>
               )}
             </ul>
