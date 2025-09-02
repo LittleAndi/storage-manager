@@ -1,13 +1,40 @@
+import React from 'react';
 import { supabase } from '../supabaseClient';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuthStore } from '@/state/authStore';
 
 const Auth: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const redirectParam = React.useMemo(
+    () => new URLSearchParams(location.search).get('redirect') || '/',
+    [location.search]
+  );
+  const user = useAuthStore(s => s.user);
+
+  // Persist desired redirect early (before OAuth redirect happens)
+  React.useEffect(() => {
+    if (redirectParam) {
+      window.localStorage.setItem('post_auth_redirect', redirectParam);
+    }
+  }, [redirectParam]);
+
+  // If already authenticated (e.g., returned from provider) send user onward
+  React.useEffect(() => {
+    if (user) {
+      const pending = window.localStorage.getItem('post_auth_redirect') || '/';
+      window.localStorage.removeItem('post_auth_redirect');
+      navigate(pending === '/auth' ? '/' : pending, { replace: true });
+    }
+  }, [user, navigate]);
+
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin, // Ensures redirect matches your deployed site
+        redirectTo: window.location.origin, // after provider, Root/App effect handles redirect
       },
     });
     if (error) {
