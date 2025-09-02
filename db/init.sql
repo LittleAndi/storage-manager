@@ -194,8 +194,8 @@ AS $$
     ), false);
 $$;
 
--- Can the current user edit boxes in a space (owner, admin, or editor)?
-CREATE OR REPLACE FUNCTION public.can_edit_boxes(p_space_id uuid)
+-- Can the current user edit a space (and its boxes) (owner, admin, or editor)?
+CREATE OR REPLACE FUNCTION public.can_edit_spaces(p_space_id uuid)
 RETURNS boolean
 LANGUAGE sql
 SECURITY DEFINER
@@ -216,28 +216,26 @@ $$;
 
 
 -- Owners / admins (and the explicit owner_id) have full CRUD on spaces
-DROP POLICY IF EXISTS "owners_admins_select" ON public.spaces;
-DROP POLICY IF EXISTS "owners_admins_update" ON public.spaces;
+DROP POLICY IF EXISTS "spaces_editors_select" ON public.spaces;
+DROP POLICY IF EXISTS "spaces_editors_update" ON public.spaces;
 DROP POLICY IF EXISTS "owners_admins_delete" ON public.spaces;
 DROP POLICY IF EXISTS "users_can_insert_spaces" ON public.spaces;
 
-CREATE POLICY "owners_admins_select"
+CREATE POLICY "spaces_editors_select"
 ON public.spaces
 FOR SELECT TO authenticated
-USING (public.is_space_owner_or_admin(id))
-WITH CHECK (public.is_space_owner_or_admin(id));
+USING (public.can_edit_spaces(id));
 
-CREATE POLICY "owners_admins_update"
+CREATE POLICY "spaces_editors_update"
 ON public.spaces
 FOR UPDATE TO authenticated
-USING (public.is_space_owner_or_admin(id))
-WITH CHECK (public.is_space_owner_or_admin(id));
+USING (public.can_edit_spaces(id))
+WITH CHECK (public.can_edit_spaces(id));
 
 CREATE POLICY "owners_admins_delete"
 ON public.spaces
 FOR DELETE TO authenticated
-USING (public.is_space_owner_or_admin(id))
-WITH CHECK (public.is_space_owner_or_admin(id));
+USING (public.is_space_owner_or_admin(id));
 
 -- Users can insert spaces
 CREATE POLICY "users_can_insert_spaces"
@@ -265,20 +263,20 @@ WITH CHECK (public.is_space_owner_or_admin(space_id));
 CREATE POLICY "boxes_editors_insert"
 ON public.boxes
 FOR INSERT TO authenticated
-WITH CHECK (public.can_edit_boxes(space_id));
+WITH CHECK (public.can_edit_spaces(space_id));
 
 -- Editors can UPDATE
 CREATE POLICY "boxes_editors_update"
 ON public.boxes
 FOR UPDATE TO authenticated
-USING (public.can_edit_boxes(space_id))
-WITH CHECK (public.can_edit_boxes(space_id));
+USING (public.can_edit_spaces(space_id))
+WITH CHECK (public.can_edit_spaces(space_id));
 
 -- Editors can DELETE
 CREATE POLICY "boxes_editors_delete"
 ON public.boxes
 FOR DELETE TO authenticated
-USING (public.can_edit_boxes(space_id));
+USING (public.can_edit_spaces(space_id));
 
 -- Viewers (any member) can SELECT only
 CREATE POLICY "boxes_viewers_select"
