@@ -3,6 +3,7 @@ import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrashIcon } from "@/components/ui/trash-icon";
+import { toast } from "sonner";
 
 export interface SpaceCardProps {
   id: string;
@@ -38,6 +39,8 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
   onDelete,
 }) => {
   const thumb = thumbnailUrl; // unified camelCase
+  const canDelete = (boxCount ?? 0) === 0;
+
   return (
     <div
       className={`relative group bg-white rounded shadow p-4 flex items-center cursor-pointer transition-colors ${
@@ -46,20 +49,36 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
       onClick={onOpen}
       aria-label={`Open space ${name}`}
     >
-      {!isShared && onDelete && (
+      {!isShared && (
+        canDelete && onDelete ? (
           <Button
             type="button"
             variant="destructive"
-          size="sm"
-          className="absolute top-2 right-2 h-7 w-7 p-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 transition-opacity"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          aria-label={`Delete space ${name}`}
-        >
-          <TrashIcon size={16} aria-hidden="true" />
-        </Button>
+            size="sm"
+            className="absolute top-2 right-2 h-7 w-7 p-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            aria-label={`Delete space ${name}`}
+          >
+            <TrashIcon size={16} aria-hidden="true" />
+          </Button>
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              // show toast or inline state
+              toast.info("Remove all boxes before deleting this space.");
+            }}
+            className="absolute top-2 right-2 h-7 w-7 p-0 flex items-center justify-center rounded border border-dashed text-muted-foreground text-[10px]"
+            aria-label="Cannot delete space (contains boxes)"
+            aria-disabled="true"
+          >
+            <TrashIcon size={14} aria-hidden="true" />
+          </button>
+        )
       )}
       {thumb && (
         <img
@@ -98,6 +117,11 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
         )}
         {location && <p className="text-sm text-muted-foreground mt-1">{location}</p>}
         <p className="text-xs text-gray-400 mt-1">Members: {memberCount ?? 0} {owner && (`| Owner: ${owner}`)}</p>
+        {boxCount && boxCount > 0 && (
+          <p className="hidden non-empty-hint-touch mt-1 text-[11px] text-muted-foreground">
+            Remove boxes to delete.
+          </p>
+        )}
       </div>
     </div>
   );

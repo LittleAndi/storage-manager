@@ -17,13 +17,14 @@ interface ShareSpaceModalProps {
   open: boolean;
   onClose: () => void;
   spaceId: string;
-  defaultRole?: "viewer" | "editor";
+  defaultRole?: "viewer" | "editor" | "admin";
   onShared?: (data: { email: string; role: string; userId: string }) => void;
 }
 
 const roleOptions = [
   { value: "viewer", label: "Viewer" },
   { value: "editor", label: "Editor" },
+  { value: "admin", label: "Admin" },
 ];
 
 export const ShareSpaceModal: React.FC<ShareSpaceModalProps> = ({ open, onClose, spaceId, defaultRole = "viewer", onShared }) => {

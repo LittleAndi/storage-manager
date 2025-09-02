@@ -1,7 +1,6 @@
 import React from "react";
 import AppShell from "../components/AppShell";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,30 +19,21 @@ import type { NewSpace } from "@/types/entities";
 import { useAuthStore } from "@/state/authStore";
 import { useNavigate } from "react-router-dom";
 
-const schema = z.object({
-  name: z.string().min(2, "Name is required"),
-  location: z.string().min(2, "Location is required"),
-  photo: z.instanceof(File).optional().or(z.string().optional()),
-});
-
-type FormData = z.infer<typeof schema>;
+import { spaceFormSchema, type SpaceFormValues } from "@/schemas/spaceSchema";
 
 const CreateSpace: React.FC = () => {
-  const form = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: {
-    name: "",
-    location: "",
-  } });
+  const form = useForm<SpaceFormValues>({ resolver: zodResolver(spaceFormSchema), defaultValues: { name: "", location: "", thumbnail_url: "" } });
   const { handleSubmit, formState: { isSubmitting }, reset } = form;
   const navigate = useNavigate();
   const addSpace = useSpacesStore(state => state.addSpace);
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: SpaceFormValues) => {
     // Save to local state and Supabase
     const owner_id = useAuthStore.getState().user!.id;
     const newSpace: NewSpace = {
       name: data.name,
       location: data.location,
-      thumbnail_url: typeof data.photo === "string" ? data.photo : undefined,
+      thumbnail_url: data.thumbnail_url,
       owner_id,
     };
     const id = await addSpace(newSpace);
@@ -90,26 +80,15 @@ const CreateSpace: React.FC = () => {
                   </FormItem>
                 )}
               />
-              <FormField
-                name="photo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="photo">Photo (optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        id="photo"
-                        type="file"
-                        aria-label="Photo upload"
-                        accept="image/*"
-                        onChange={e => {
-                          field.onChange(e.target.files?.[0] ?? undefined);
-                        }}
-                        ref={field.ref}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+              {/* Thumbnail URL input (simple) */}
+              <FormField name="thumbnail_url" render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="thumbnail_url">Thumbnail URL (optional)</FormLabel>
+                  <FormControl>
+                    <Input id="thumbnail_url" type="text" placeholder="https://..." {...field} />
+                  </FormControl>
+                </FormItem>
+              )} />
             </CardContent>
             <CardFooter>
               <Button type="submit" className="w-full" disabled={isSubmitting}>

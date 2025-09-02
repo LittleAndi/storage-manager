@@ -1,12 +1,8 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-import {
-  Form,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-} from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { boxFormSchema, type BoxFormValues } from "@/schemas/boxSchema";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { useBoxesStore } from "@/state/boxesStore";
 import type { NewBox } from "@/types/entities";
 import { useNavigate, useParams } from "react-router-dom";
@@ -18,22 +14,19 @@ import { Button } from "@/components/ui/button";
 interface CreateBoxModalProps {
   open: boolean;
   onClose: () => void;
-  onCreate?: (data: { name: string; location: string; content?: string }) => void;
+  onCreate?: (data: { name: string; location?: string; content?: string }) => void;
 }
 
 const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate }) => {
-  const form = useForm({
-    defaultValues: {
-      name: "",
-      location: "",
-      content: "",
-    },
+  const form = useForm<BoxFormValues>({
+    resolver: zodResolver(boxFormSchema),
+    defaultValues: { name: "", location: "", content: "", thumbnail_url: "" },
   });
   const { spaceId } = useParams();
   const navigate = useNavigate();
   const addBox = useBoxesStore((state) => state.addBox);
 
-  const handleSubmit = async (values: { name: string; location: string; content?: string }) => {
+  const handleSubmit = async (values: BoxFormValues) => {
     if (!spaceId) return;
     const newBox: NewBox = {
       name: values.name,
@@ -64,41 +57,36 @@ const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate
         </AlertDialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
-            <FormItem>
-              <FormLabel htmlFor="box-name">Box Name</FormLabel>
-              <FormControl>
-                <Input
-                  id="box-name"
-                  placeholder="Enter box name"
-                  {...form.register("name", { required: true })}
-                  autoFocus
-                />
-              </FormControl>
-              <FormDescription>Required. Give your box a descriptive name.</FormDescription>
-            </FormItem>
-            <FormItem>
-              <FormLabel htmlFor="box-location">Location</FormLabel>
-              <FormControl>
-                <Input
-                  id="box-location"
-                  placeholder="Enter location (optional)"
-                  {...form.register("location")}
-                />
-              </FormControl>
-              <FormDescription>Optional. Where is this box stored?</FormDescription>
-            </FormItem>
-            <FormItem>
-              <FormLabel htmlFor="box-content">Content</FormLabel>
-              <FormControl>
-                <Textarea
-                  id="box-content"
-                  placeholder="Enter box content (optional)"
-                  {...form.register("content")}
-                  rows={5}
-                />
-              </FormControl>
-              <FormDescription>Optional. What does this box contain?</FormDescription>
-            </FormItem>
+            <FormField name="name" render={({ field }) => (
+              <FormItem>
+                <FormLabel htmlFor="box-name">Box Name</FormLabel>
+                <FormControl>
+                  <Input id="box-name" placeholder="Enter box name" {...field} autoFocus />
+                </FormControl>
+                <FormDescription>Required. Give your box a descriptive name.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField name="location" render={({ field }) => (
+              <FormItem>
+                <FormLabel htmlFor="box-location">Location</FormLabel>
+                <FormControl>
+                  <Input id="box-location" placeholder="Enter location (optional)" {...field} />
+                </FormControl>
+                <FormDescription>Optional. Where is this box stored?</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField name="content" render={({ field }) => (
+              <FormItem>
+                <FormLabel htmlFor="box-content">Content</FormLabel>
+                <FormControl>
+                  <Textarea id="box-content" placeholder="Enter box content (optional)" {...field} rows={5} />
+                </FormControl>
+                <FormDescription>Optional. What does this box contain?</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )} />
             <AlertDialogFooter>
               <Button type="submit">Create</Button>
               <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>

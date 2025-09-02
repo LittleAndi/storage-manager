@@ -13,6 +13,10 @@ import ShareSpaceModal from "@/components/ShareSpaceModal";
 
 import './SpaceDetail.css';
 import { Button } from "@/components/ui/button";
+import EditSpaceModal from "@/components/EditSpaceModal";
+import { useSpacePermission } from "@/state/useSpacePermission";
+import EditableTitle from "@/components/EditableTitle";
+import { useEntityUpdate } from "@/hooks/useEntityUpdate";
 
 const SpaceDetail: React.FC = () => {
   const { spaceId } = useParams();
@@ -23,6 +27,7 @@ const SpaceDetail: React.FC = () => {
 
   const [createBoxOpen, setCreateBoxOpen] = React.useState(false);
   const [shareSpaceOpen, setShareSpaceOpen] = React.useState(false);
+  const [editOpen, setEditOpen] = React.useState(false);
   const boxes = useBoxesStore((state) => state.boxes);
   const fetchBoxes = useBoxesStore((state) => state.fetchBoxes);
 
@@ -40,6 +45,10 @@ const SpaceDetail: React.FC = () => {
     }    
     if (spaceId) fetchBoxes(spaceId);
   }, [spaces, spaceId, fetchSpaces, fetchBoxes]);
+
+  const permission = useSpacePermission(spaceId || "");
+  // Always call hooks first
+  const { mutate: updateName } = useEntityUpdate<{ name: string }>({ kind: "space", entity: space || { id: "__placeholder__", name: "", owner_id: "", location: "" } });
 
   if (!space) {
     return (
@@ -60,7 +69,19 @@ const SpaceDetail: React.FC = () => {
         <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/><path d="M21 12H9"/></svg>
         <span>Back to Spaces</span>
       </Button>
-      <h1 className="text-2xl font-bold mb-4">{space.name}</h1>
+      <div className="flex items-start gap-4 mb-4 flex-wrap">
+        <EditableTitle
+          value={space.name}
+          canEdit={permission.canEdit}
+          onSave={async (name) => updateName({ name })}
+          className="flex-1"
+        />
+        {permission.canEdit && (
+          <Button variant="outline" onClick={() => setEditOpen(true)} aria-label="Edit space">
+            Edit
+          </Button>
+        )}
+      </div>
       <div className="mb-2 text-muted-foreground">Location: {space.location}</div>
       <div className="mb-2">
         <h2 className="text-sm font-semibold text-muted-foreground mb-1">Members</h2>
@@ -105,7 +126,8 @@ const SpaceDetail: React.FC = () => {
           )}
         </Button>
       </div>
-      <CreateBoxModal open={createBoxOpen} onClose={closeCreateBox} />
+  <CreateBoxModal open={createBoxOpen} onClose={closeCreateBox} />
+  <EditSpaceModal open={editOpen} onClose={() => setEditOpen(false)} space={space} />
       <ShareSpaceModal open={shareSpaceOpen} onClose={closeShareSpace} spaceId={space.id} />
       
       {!showLabelSheet ? (
