@@ -104,7 +104,8 @@ const Spaces: React.FC = () => {
           thumbnailUrl: s.thumbnail_url,
           isShared: false,
           onOpen: () => navigate(`/spaces/${s.id}`),
-          onDelete: () => setDeletingId(s.id)
+          // Only allow delete if no boxes
+          onDelete: (s.boxCount ?? 0) === 0 ? () => setDeletingId(s.id) : undefined
         }))}
       />
       <SpacesSection
