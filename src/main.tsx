@@ -3,12 +3,13 @@ import './style.css';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { BrowserRouter } from 'react-router-dom';
 import { useAuthStore } from './state/authStore';
 import { supabase } from './supabaseClient';
 import type { UserProfile } from "@/types/entities";
 import { supabaseUserToUserProfile } from "./lib/mappers";
 
-function Root() {
+export function Root() {
   const [loading, setLoading] = useState(true);
   const setUser = useAuthStore((state) => state.setUser);
   const setToken = useAuthStore((state) => state.setToken);
@@ -37,6 +38,8 @@ function Root() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Root />
+    <BrowserRouter>
+      <Root />
+    </BrowserRouter>
   </StrictMode>,
 )
