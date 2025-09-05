@@ -25,7 +25,7 @@ import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
 
 const navLinks = [
-  { href: "/", label: "Dashboard" },
+  { href: "/", label: "Get Started" },
   { href: "/spaces", label: "Spaces" },
   { href: "/profile", label: "Profile" },
   { href: "/bulk", label: "Bulk Operations" },

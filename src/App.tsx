@@ -1,7 +1,7 @@
 import React, { type JSX } from 'react';
 import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './state/authStore';
-import Dashboard from './pages/Dashboard';
+import GetStarted from './pages/GetStarted';
 import Spaces from './pages/Spaces';
 import CreateSpace from './pages/CreateSpace';
 import SpaceDetail from './pages/SpaceDetail';
@@ -55,7 +55,7 @@ function App() {
           element={
             <RequireAuth>
               <Routes>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<GetStarted />} />
                 <Route path="/spaces" element={<Spaces />} />
                 <Route path="/spaces/new" element={<CreateSpace />} />
                 <Route path="/spaces/:spaceId" element={<SpaceDetail />} />
