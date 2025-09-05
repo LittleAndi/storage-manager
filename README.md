@@ -57,3 +57,21 @@ npm i supabase@">=2.34.3" --save-dev
 npx supabase login
 npx supabase gen types typescript --project-id "$PROJECT_REF" --schema public > database.types.ts
 ```
+
+## Environment Variables (Supabase Connection)
+
+To connect the app to your Supabase project, you need to create a `.env` file in the project root with the following variables:
+
+```env
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+You can find these values in your Supabase dashboard:
+
+- Go to your project in Supabase
+- Click on the **Connect** view (usually in the sidebar)
+- Copy the **Project URL** and **anon public key**
+- Paste them into your `.env` file as shown above
+
+These variables are required for the app to connect to Supabase for authentication and data access. Never commit your real `.env` file to a public repository.
