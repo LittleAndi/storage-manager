@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using System;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Jpeg;
 
 public class UploadImage
 {
@@ -40,8 +42,6 @@ public class UploadImage
         string? extension = Path.GetExtension(file.FileName)?.ToLower();
         if (string.IsNullOrEmpty(extension)) extension = ".jpg";
 
-        string blobName = $"{imageId}/original{extension}";
-
         string containerName = Environment.GetEnvironmentVariable("BLOB_CONTAINER_NAME") ?? "images";
         string? connectionString = Environment.GetEnvironmentVariable("StorageAccountConnectionString");
 
@@ -51,41 +51,79 @@ public class UploadImage
             return new ObjectResult(new { error = "server misconfiguration" }) { StatusCode = 500 };
         }
 
-        var blobServiceClient = new BlobServiceClient(connectionString);
-        var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
-
-        await containerClient.CreateIfNotExistsAsync();
-
-        var blobClient = containerClient.GetBlobClient(blobName);
-
-        // Upload the file stream
-        using (var stream = file.OpenReadStream())
+        try
         {
-            await blobClient.UploadAsync(stream, overwrite: true);
+            var blobServiceClient = new BlobServiceClient(connectionString);
+            var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+            await containerClient.CreateIfNotExistsAsync();
+
+            // MODIFIED: Read file into a memory stream to be reused for original and thumbnail
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+            memoryStream.Position = 0; // Reset stream position
+
+            // 1. Upload the original image
+            string originalBlobName = $"{imageId}/original{extension}";
+            var originalBlobClient = containerClient.GetBlobClient(originalBlobName);
+            await originalBlobClient.UploadAsync(memoryStream, overwrite: true);
+            log.LogInformation("Uploaded original image: {OriginalBlobName}", originalBlobName);
+
+            // 2. NEW: Create and upload the thumbnail
+            memoryStream.Position = 0; // Reset stream position again for ImageSharp
+
+            string thumbnailBlobName = $"{imageId}/thumbnail{extension}";
+            var thumbnailBlobClient = containerClient.GetBlobClient(thumbnailBlobName);
+
+            using (var image = await Image.LoadAsync(memoryStream))
+            {
+                // Define the resize options
+                var options = new ResizeOptions
+                {
+                    Size = new Size(150, 150),
+                    Mode = ResizeMode.Crop // Crop will ensure the image is exactly 150x150
+                };
+
+                // Mutate the image to resize it
+                image.Mutate(x => x.Resize(options));
+
+                // Save the resized image to a new memory stream
+                using var thumbnailStream = new MemoryStream();
+                await image.SaveAsync(thumbnailStream, new JpegEncoder()); // Saving as JPEG for web efficiency
+                thumbnailStream.Position = 0;
+
+                // Upload the thumbnail stream
+                await thumbnailBlobClient.UploadAsync(thumbnailStream, overwrite: true);
+                log.LogInformation("Uploaded thumbnail image: {ThumbnailBlobName}", thumbnailBlobName);
+            }
+
+            // --- MODIFIED: The rest of the function now generates the SAS token for the THUMBNAIL image ---
+
+            int previewMinutes = 60 * 24; // 24 hours
+            var previewEnv = Environment.GetEnvironmentVariable("PREVIEW_SAS_MINUTES");
+            if (int.TryParse(previewEnv, out var parsed)) previewMinutes = parsed;
+
+            var previewSasBuilder = new BlobSasBuilder
+            {
+                BlobContainerName = containerName,
+                BlobName = thumbnailBlobName, // MODIFIED: SAS token now points to the thumbnail
+                Resource = "b",
+                ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(previewMinutes)
+            };
+            previewSasBuilder.SetPermissions(BlobSasPermissions.Read);
+
+            var previewUri = thumbnailBlobClient.GenerateSasUri(previewSasBuilder); // MODIFIED: Use the thumbnail client
+
+            return new OkObjectResult(new
+            {
+                image_id = imageId,
+                message = "Upload and thumbnail creation successful",
+                preview_url = previewUri.ToString()
+            });
         }
-
-        // Create a read SAS for previewing the uploaded image. Default expiry 24 hours,
-        // configurable via PREVIEW_SAS_MINUTES environment variable.
-        int previewMinutes = 60 * 24; // 24 hours
-        var previewEnv = Environment.GetEnvironmentVariable("PREVIEW_SAS_MINUTES");
-        if (int.TryParse(previewEnv, out var parsed)) previewMinutes = parsed;
-
-        var previewSasBuilder = new BlobSasBuilder
+        catch (Exception ex)
         {
-            BlobContainerName = containerName,
-            BlobName = blobName,
-            Resource = "b",
-            ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(previewMinutes)
-        };
-        previewSasBuilder.SetPermissions(BlobSasPermissions.Read);
-
-        var previewUri = blobClient.GenerateSasUri(previewSasBuilder);
-
-        return new OkObjectResult(new
-        {
-            image_id = imageId,
-            message = "Upload successful",
-            preview_url = previewUri.ToString()
-        });
+            log.LogError(ex, "An error occurred during image upload and processing for imageId: {ImageId}", imageId);
+            return new ObjectResult(new { error = "An internal error occurred." }) { StatusCode = 500 };
+        }
     }
 }
