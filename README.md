@@ -75,3 +75,13 @@ You can find these values in your Supabase dashboard:
 - Paste them into your `.env` file as shown above
 
 These variables are required for the app to connect to Supabase for authentication and data access. Never commit your real `.env` file to a public repository.
+
+## SWA
+
+```bash
+# Start dev for frontend
+npm run dev
+
+# Start Azure Static Web App simulator
+swa start http://localhost:5173 --api-location api
+```
