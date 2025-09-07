@@ -20,17 +20,11 @@ public class UploadImage
     [Function("UploadImage")]
     public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "images/{imageId}")] HttpRequest req,
-        FunctionContext executionContext)
+        string imageId
+        )
     {
         // Extract fields from multipart form
         var form = await req.ReadFormAsync();
-
-        // Get the imageId from the route parameter
-        string imageId = req.RouteValues["imageId"]?.ToString() ?? string.Empty;
-        if (string.IsNullOrEmpty(imageId))
-        {
-            return new BadRequestObjectResult(new { error = "imageId is required in the URL path" });
-        }
 
         var file = form.Files["file"];
         if (file == null || file.Length == 0)

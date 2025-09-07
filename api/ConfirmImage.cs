@@ -13,14 +13,14 @@ public class ConfirmImage
     {
         this.log = log;
     }
-
     // Record matching the expected JSON payload posted to this function (metadata only)
     public record ConfirmImageRequest(string metadata_key, string metadata_value);
 
     [Function("ConfirmImage")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "images/{imageId}")] HttpRequest req
-    )
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "images/{imageId}")] HttpRequest req,
+        string imageId
+        )
     {
         // Parse request body into a typed record
         string body = await new StreamReader(req.Body).ReadToEndAsync();
@@ -31,14 +31,12 @@ public class ConfirmImage
             return new BadRequestObjectResult(new { error = "invalid request body" });
         }
 
-        string imageId = req.RouteValues["imageId"]?.ToString() ?? string.Empty;
+        string metadataKey = request.metadata_key;
+        string metadataValue = request.metadata_value;
 
-        string metadataKey = request?.metadata_key ?? string.Empty;
-        string metadataValue = request?.metadata_value ?? string.Empty;
-
-        if (string.IsNullOrEmpty(imageId) || string.IsNullOrEmpty(metadataKey) || string.IsNullOrEmpty(metadataValue))
+        if (string.IsNullOrEmpty(metadataKey) || string.IsNullOrEmpty(metadataValue))
         {
-            return new BadRequestObjectResult(new { error = "image_id, metadata_key, and metadata_value are required" });
+            return new BadRequestObjectResult(new { error = "metadata_key and metadata_value are required" });
         }
 
         string containerName = Environment.GetEnvironmentVariable("BLOB_CONTAINER_NAME") ?? "images";
