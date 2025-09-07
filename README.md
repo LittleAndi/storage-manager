@@ -76,6 +76,10 @@ You can find these values in your Supabase dashboard:
 
 These variables are required for the app to connect to Supabase for authentication and data access. Never commit your real `.env` file to a public repository.
 
+## Hosting
+
+Currently this is designed to be hosted in Azure using Azure Static Web Apps (Free sku) and a Storage Account.
+
 ## SWA
 
 ```bash
