@@ -102,6 +102,7 @@ const Spaces: React.FC = () => {
           boxCount: s.boxCount,
           owner: s.owner || undefined,
           thumbnailUrl: s.thumbnail_url,
+          imageId: s.image_id ?? undefined,
           isShared: false,
           onOpen: () => navigate(`/spaces/${s.id}`),
           // Only allow delete if no boxes
@@ -118,6 +119,7 @@ const Spaces: React.FC = () => {
           boxCount: s.boxCount,
           owner: s.owner || undefined,
           thumbnailUrl: s.thumbnail_url,
+          imageId: s.image_id ?? undefined,
           isShared: true,
           ownerName: s.owner || undefined,
           role: membershipRoles[s.id],

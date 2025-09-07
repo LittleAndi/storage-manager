@@ -9,9 +9,12 @@ interface SpacesState {
   spaces: Space[];
   loading: boolean;
   error: string | null;
+  /** map of spaceId -> resolved thumbnail URL (signed) */
+  imageUrls: Record<string, string>;
   membershipRoles: Record<string, string>;
   membershipCounts: Record<string, number>;
   fetchSpaces: () => Promise<void>;
+  setSpaceImageUrl: (spaceId: string, url: string) => void;
   addSpace: (space: NewSpace) => Promise<string | null>;
   updateSpace: (space: Space) => void;
   removeSpace: (id: string) => void;
@@ -32,6 +35,7 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
   spaces: [],
   loading: false,
   error: null,
+  imageUrls: {},
   membershipRoles: {},
   membershipCounts: {},
   membersBySpace: {},
@@ -49,14 +53,16 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
         return;
       }
       // Map spaces and attach boxCount
-      const spaces: Space[] = (data || []).map((
-        space: Database["public"]["Tables"]["spaces"]["Row"] & {
-          boxes?: { count: number }[];
-        },
-      ) => ({
-        ...dbSpaceToAppSpace(space),
-        boxCount: space.boxes?.[0]?.count ?? 0,
-      }));
+      const spaces: Space[] = (data || []).map(
+        (
+          space: Database["public"]["Tables"]["spaces"]["Row"] & {
+            boxes?: { count: number }[];
+          }
+        ) => ({
+          ...dbSpaceToAppSpace(space),
+          boxCount: space.boxes?.[0]?.count ?? 0,
+        })
+      );
 
       // Membership roles/counts logic unchanged
       const membershipRoles: Record<string, string> = {};
@@ -80,7 +86,19 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
         // ignore
       }
 
-      set({ spaces, membershipRoles, membershipCounts, loading: false });
+      // Rehydrate any persisted imageUrls
+      const savedImageUrlsRaw = localStorage.getItem("spaceImageUrls");
+      const savedImageUrls: Record<string, string> = savedImageUrlsRaw
+        ? JSON.parse(savedImageUrlsRaw)
+        : {};
+
+      set({
+        spaces,
+        membershipRoles,
+        membershipCounts,
+        loading: false,
+        imageUrls: savedImageUrls,
+      });
       localStorage.setItem("spaces", JSON.stringify(spaces));
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
@@ -93,7 +111,9 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
     const now = new Date(Date.now()).toISOString();
     // Use mapper for NewSpace to DB Insert type
     const dbInsert = newSpaceToDbSpace(space, now);
-    const { data, error } = await supabase.from("spaces").insert(dbInsert)
+    const { data, error } = await supabase
+      .from("spaces")
+      .insert(dbInsert)
       .select();
     if (error || !data || !data[0]?.id) {
       set({ error: error?.message || "Failed to create space" });
@@ -110,6 +130,23 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
     set({ spaces: updated });
     localStorage.setItem("spaces", JSON.stringify(updated));
     return data[0].id;
+  },
+  setSpaceImageUrl: (spaceId: string, url: string) => {
+    // update in-memory map and persist
+    set((state) => {
+      const imageUrls = { ...(state.imageUrls || {}), [spaceId]: url };
+      // also update spaces array thumbnail_url for immediate UI consistency
+      const spaces = state.spaces.map((s) =>
+        s.id === spaceId ? { ...s, thumbnail_url: url } : s
+      );
+      try {
+        localStorage.setItem("spaceImageUrls", JSON.stringify(imageUrls));
+        localStorage.setItem("spaces", JSON.stringify(spaces));
+      } catch {
+        // ignore storage errors
+      }
+      return { imageUrls, spaces } as Partial<SpacesState>;
+    });
   },
   updateSpace: (space) =>
     set({
@@ -139,8 +176,9 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
       memberLoading: { ...state.memberLoading, [spaceId]: true },
       memberErrors: { ...state.memberErrors, [spaceId]: null },
     }));
-    const { data, error } = await supabase
-      .rpc("get_space_members", { p_space: spaceId });
+    const { data, error } = await supabase.rpc("get_space_members", {
+      p_space: spaceId,
+    });
     if (error) {
       set((state) => ({
         memberLoading: { ...state.memberLoading, [spaceId]: false },
@@ -152,12 +190,13 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
     type DbSpaceMember =
       Database["public"]["Functions"]["get_space_members"]["Returns"][number];
 
-    const rows: SpaceMember[] = (data || []).map((r: DbSpaceMember) => ({
-      user_id: r.user_id,
-      role: r.role,
-      display_name: r.display_name ?? null,
-      avatar_url: r.avatar_url ?? null,
-    })) || [];
+    const rows: SpaceMember[] =
+      (data || []).map((r: DbSpaceMember) => ({
+        user_id: r.user_id,
+        role: r.role,
+        display_name: r.display_name ?? null,
+        avatar_url: r.avatar_url ?? null,
+      })) || [];
     set((state) => ({
       membersBySpace: { ...state.membersBySpace, [spaceId]: rows },
       memberLoading: { ...state.memberLoading, [spaceId]: false },
