@@ -64,10 +64,24 @@ const BoxDetail: React.FC = () => {
 
   return (
     <AppShell>
+      <Button
+        variant="ghost"
+        className="mb-4 flex items-center gap-2 w-fit"
+        onClick={() => window.history.length > 1 ? window.history.back() : (window.location.href = `/spaces/${spaceId}`)}
+        aria-label="Back to space"
+      >
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/><path d="M21 12H9"/></svg>
+        <span>Back to Space</span>
+      </Button>
       <div className="flex items-start gap-4 mb-4 flex-wrap">
-        <h1 className="text-2xl font-bold">Box Detail</h1>
+        <EditableTitle 
+          value={box.name}
+          canEdit={permission.canEdit}
+          onSave={async (name) => updateBoxName({ name })}
+          className="flex-1"
+        />
         {permission.canEdit && (
-          <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>Edit Box</Button>
+          <Button variant="outline" onClick={() => setEditOpen(true)} aria-label="Edit box">Edit Box</Button>
         )}
       </div>
       {(
@@ -89,7 +103,6 @@ const BoxDetail: React.FC = () => {
             )}
           </div>
           <div className="mb-2 flex items-center gap-2"><span className="font-semibold">Name:</span>
-            <EditableTitle value={box.name} canEdit={permission.canEdit} onSave={async (name) => updateBoxName({ name })} />
           </div>
           <div className="mb-2"><span className="font-semibold">Location:</span> {box.location || <span className="text-muted-foreground">(none)</span>}</div>
           <div className="mb-2"><span className="font-semibold">Content:</span><br />

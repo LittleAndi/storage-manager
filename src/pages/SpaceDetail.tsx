@@ -86,7 +86,7 @@ const SpaceDetail: React.FC = () => {
         />
         {permission.canEdit && (
           <Button variant="outline" onClick={() => setEditOpen(true)} aria-label="Edit space">
-            Edit
+            Edit Space
           </Button>
         )}
       </div>
