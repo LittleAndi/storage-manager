@@ -15,14 +15,36 @@ Storage Manager is a modern, responsive Single Page Application (SPA) for managi
 
 ## Tech Stack
 
-- React + TypeScript
-- Vite
-- Tailwind CSS & shadcn/ui
+**Frontend**
+- React 19 + TypeScript 5.9
+- Vite 7
+- Tailwind CSS v4 (via `@tailwindcss/vite`) + shadcn/ui + Radix UI primitives
 - Zustand (state management)
-- React Router
-- React Hook Form + Zod (forms & validation)
-- Supabase Auth (social login)
-- Vitest, React Testing Library, (Playwright optional) for unit & integration tests
+- React Router v7
+- React Hook Form + Zod (schema validation)
+- Supabase JS client (`@supabase/supabase-js`) for Auth, Database, Storage
+- Sonner (toast notifications)
+- Lucide React Icons
+
+**Backend / API**
+- Azure Functions (.NET 8 isolated worker)
+  - Azure.Storage.Blobs (image storage)
+  - SixLabors.ImageSharp (image processing)
+  - Application Insights telemetry
+- Supabase (Postgres, Auth, Storage policies)
+
+**Tooling & Dev Experience**
+- Node.js ≥ 22.12
+- TypeScript project refs (`tsconfig.app.json`, `tsconfig.node.json`)
+- ESLint 9 + `typescript-eslint` + React Hooks/Refresh plugins
+- Vitest + React Testing Library + User Event (unit/integration)
+- Playwright (E2E, optional)
+- Supabase CLI (type generation)
+- Azure Static Web Apps (hosting & CI workflow)
+
+**Other**
+- Vite chunk splitting (manualChunks in `vite.config.ts`) for perf
+- Image upload + signed URL resolution via custom Azure Function endpoints
 
 ## Main Pages & Routes
 
