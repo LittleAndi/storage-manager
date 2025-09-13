@@ -4,7 +4,8 @@ import { SpacesSection } from "../components/SpacesSection";
 import { resolveImageUrl, getCachedImageUrl } from "@/lib/imageUrls";
 import { useSpacesStore } from "@/state/spacesStore";
 import { useAuthStore } from "@/state/authStore";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
