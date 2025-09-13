@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useSpacesStore } from "@/state/spacesStore";
+import { resolveImageUrl, getCachedImageUrl } from "@/lib/imageUrls";
 import { useBoxesStore } from "@/state/boxesStore";
 import { useNavigate } from "react-router-dom";
 
@@ -22,8 +23,6 @@ const SpaceDetail: React.FC = () => {
   const { spaceId } = useParams();
   const spaces = useSpacesStore((state) => state.spaces);
   const fetchSpaces = useSpacesStore((state) => state.fetchSpaces);
-  const imageUrls = useSpacesStore((state) => state.imageUrls);
-  const setSpaceImageUrl = useSpacesStore((state) => state.setSpaceImageUrl);
   const space = useSpacesStore((state) => state.spaces.find(s => s.id === spaceId));
   const navigate = useNavigate();
 
@@ -51,34 +50,9 @@ const SpaceDetail: React.FC = () => {
   // If we don't have a resolved URL for this space but the space has an image_id,
   // try to fetch a signed URL and persist it in the store so the detail view shows it.
   React.useEffect(() => {
-    if (!space) return;
-    const spaceIdLocal = space.id;
-    if (imageUrls?.[spaceIdLocal]) return; // already resolved
-  const imageId = (space as { image_id?: string } )?.image_id;
-    if (!imageId) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const resp = await fetch('/api/images/urls', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify([imageId]),
-        });
-        if (!resp.ok) return;
-        const body = await resp.json();
-        const entry = body?.[imageId];
-        const url = entry?.Value ?? entry?.value ?? entry ?? null;
-        if (!cancelled && typeof url === 'string' && url.length > 0) {
-          try { setSpaceImageUrl(spaceIdLocal, url); } catch { /* ignore */ }
-        }
-      } catch {
-        // ignore
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [space, imageUrls, setSpaceImageUrl]);
+    if (!space?.image_id) return;
+    resolveImageUrl(space.image_id);
+  }, [space?.image_id]);
 
   const permission = useSpacePermission(spaceId || "");
   // Always call hooks first
@@ -121,8 +95,8 @@ const SpaceDetail: React.FC = () => {
         <h2 className="text-sm font-semibold text-muted-foreground mb-1">Members</h2>
         <MemberList spaceId={space.id} />
       </div>
-      {(imageUrls?.[space.id] || space.thumbnail_url) && (
-        <img src={imageUrls?.[space.id] ?? space.thumbnail_url} alt={space.name} className="w-32 h-32 rounded mb-4" />
+      {space.image_id && getCachedImageUrl(space.image_id) && (
+        <img src={getCachedImageUrl(space.image_id)} alt={space.name} className="w-32 h-32 rounded mb-4" />
       )}
       <div className="mb-4 flex gap-2 flex-wrap">
         <Button
@@ -177,8 +151,7 @@ const SpaceDetail: React.FC = () => {
                   id={box.id}
                   name={box.name}
                   location={box.location}
-                  // itemCount={box.itemCount}
-                  thumbnailUrl={box.thumbnail_url}
+                  thumbnailUrl={box.image_id ? getCachedImageUrl(box.image_id) : undefined}
                   onOpen={() => navigate(`/spaces/${spaceId}/boxes/${box.id}`)}
                 />
               ))}

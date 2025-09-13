@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { supabase } from "@/supabaseClient";
 import type { Box, NewBox } from "@/types/entities";
 import { dbBoxToAppBox, newBoxToDbBox } from "@/lib/mappers";
+import { confirmImage } from "@/lib/imageUpload";
 
 interface BoxesState {
     boxes: Box[];
@@ -74,6 +75,15 @@ export const useBoxesStore = create<BoxesState>((set, get) => ({
         const updated = [...existingBoxes, newBox];
         set({ boxes: updated });
         localStorage.setItem(`boxes_${box.space_id}`, JSON.stringify(updated));
+        // Fire-and-forget confirmImage if we have an image id
+        if (newBox.image_id) {
+            confirmImage(newBox.image_id, {
+                metadataKey: "box_id",
+                metadataValue: newBox.id,
+            }).catch((e) => {
+                console.warn("confirmImage failed for box", newBox.id, e);
+            });
+        }
         return data[0].id;
     },
     updateBox: (box) =>

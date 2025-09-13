@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { ImageUploadField } from "@/components/forms/ImageUploadField";
 import { useEntityUpdate } from "@/hooks/useEntityUpdate";
 import type { Box } from "@/types/entities";
 import { toast } from "sonner";
@@ -24,7 +25,7 @@ const EditBoxModal: React.FC<EditBoxModalProps> = ({ open, onClose, box }) => {
       name: box.name,
       location: box.location || "",
       content: box.content || "",
-      thumbnail_url: box.thumbnail_url || "",
+      image_id: box.image_id || "",
     },
   });
 
@@ -36,7 +37,7 @@ const EditBoxModal: React.FC<EditBoxModalProps> = ({ open, onClose, box }) => {
   });
 
   async function onSubmit(values: BoxFormValues) {
-    await mutate(values);
+    await mutate({ ...values, image_id: values.image_id || undefined });
     onClose();
   }
 
@@ -76,15 +77,18 @@ const EditBoxModal: React.FC<EditBoxModalProps> = ({ open, onClose, box }) => {
                 <FormMessage />
               </FormItem>
             )} />
-            <FormField name="thumbnail_url" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Thumbnail URL</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="https://..." />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+            {/* Image editing: reuse upload field; on upload set image_id */}
+            <div>
+              <ImageUploadField
+                name="edit_image_upload"
+                label="Box Image"
+                description="Upload or replace the box image."
+                onUploaded={(r) => form.setValue("image_id", r.imageId, { shouldDirty: true, shouldTouch: true })}
+              />
+              {box.image_id && !form.watch("image_id") && (
+                <p className="text-xs text-muted-foreground mt-1">Existing image will remain unless replaced.</p>
+              )}
+            </div>
             <AlertDialogFooter>
               <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save"}</Button>
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>

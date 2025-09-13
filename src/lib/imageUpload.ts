@@ -2,12 +2,12 @@
  * Shared image upload & confirm helper for spaces and boxes.
  *
  * Endpoints expected (Azure Functions / API):
- *  POST /api/UploadImage  (multipart/form-data: file)
+ *  POST /api/images/{imageId}  (multipart/form-data: file)
  *      -> { image_id: string, preview_url?: string }
- *  POST /api/ConfirmImage (json: { image_id, metadata_key?, metadata_value? })
- *      -> { success: boolean }
- *  POST /api/GetImageUrls (json: { image_ids: string[] })
- *      -> { images: { image_id: string, url: string }[] }
+ *  PUT /api/images/{imageId} (json: { metadata_key, metadata_value })
+ *      -> { message: string }
+ *  POST /api/images/urls (json: string[])
+ *      -> { [image_id: string]: { key: string, value: string } }
  */
 
 export interface UploadResult {
@@ -33,13 +33,22 @@ async function http<T>(url: string, init: RequestInit): Promise<T> {
     return (await res.json()) as T;
 }
 
-/** Upload a file and receive an image id (and optional preview URL). */
-export async function uploadImage(file: File): Promise<UploadResult> {
+/**
+ * Upload a file and receive an image id (and optional preview URL).
+ * The backend expects the image id as a route parameter; we generate a UUID client-side.
+ */
+export async function uploadImage(
+    file: File,
+    providedId?: string,
+): Promise<UploadResult> {
+    const imageId = providedId ||
+        (typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
     const form = new FormData();
     form.append("file", file);
-    // Rely on relative path so it works in local dev & prod
     const data = await http<{ image_id: string; preview_url?: string }>(
-        "/api/UploadImage",
+        `/api/images/${imageId}`,
         {
             method: "POST",
             body: form,
@@ -53,38 +62,42 @@ export async function confirmImage(
     imageId: string,
     options?: ConfirmOptions,
 ): Promise<boolean> {
-    const payload: Record<string, string> = { image_id: imageId } as Record<
-        string,
-        string
-    >;
-    if (options?.metadataKey && options.metadataValue) {
-        payload.metadata_key = options.metadataKey;
-        payload.metadata_value = options.metadataValue;
-    }
-    const data = await http<{ success?: boolean }>("/api/ConfirmImage", {
-        method: "POST",
+    if (!options?.metadataKey || !options.metadataValue) return false;
+    // Backend expects only metadata key/value; imageId is in the route
+    const res = await fetch(`/api/images/${imageId}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+            metadata_key: options.metadataKey,
+            metadata_value: options.metadataValue,
+        }),
     });
-    return !!data.success;
+    if (!res.ok) return false;
+    // Optionally read body (not strictly needed)
+    return true;
 }
 
 /** Resolve a set of image ids to signed URLs. */
 export async function getImageUrls(
     imageIds: string[],
 ): Promise<Record<string, string>> {
+    // Backend expects a raw JSON array body; returns an object mapping imageId -> { key, value }
     if (!imageIds.length) return {};
-    const data = await http<{ images: { image_id: string; url: string }[] }>(
-        "/api/GetImageUrls",
+    const data = await http<
+        Record<string, { key: string; value: string } | null>
+    >(
+        "/api/images/urls",
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ image_ids: imageIds }),
+            body: JSON.stringify(imageIds),
         },
     );
     const map: Record<string, string> = {};
-    for (const img of data.images || []) {
-        map[img.image_id] = img.url;
+    for (const [imageId, kv] of Object.entries(data || {})) {
+        if (kv && typeof kv.value === "string") {
+            map[imageId] = kv.value;
+        }
     }
     return map;
 }

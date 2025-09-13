@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, A
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { ImageUploadField } from "@/components/forms/ImageUploadField";
 
 interface CreateBoxModalProps {
   open: boolean;
@@ -20,7 +21,7 @@ interface CreateBoxModalProps {
 const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate }) => {
   const form = useForm<BoxFormValues>({
     resolver: zodResolver(boxFormSchema),
-    defaultValues: { name: "", location: "", content: "", thumbnail_url: "" },
+    defaultValues: { name: "", location: "", content: "", image_id: "" },
   });
   const { spaceId } = useParams();
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate
       location: values.location,
       space_id: spaceId,
       content: values.content,
+      image_id: values.image_id || undefined,
     };
     await addBox(newBox);
     if (onCreate) onCreate(values);
@@ -87,6 +89,17 @@ const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate
                 <FormMessage />
               </FormItem>
             )} />
+            {/* Image upload field: stores image_id (and preview_url transiently) */}
+            <div>
+              <ImageUploadField
+                name="image_upload"
+                label="Box Image"
+                description="Optional image representing this box."
+                onUploaded={(r) => {
+                  form.setValue("image_id", r.imageId, { shouldDirty: true, shouldTouch: true });
+                }}
+              />
+            </div>
             <AlertDialogFooter>
               <Button type="submit">Create</Button>
               <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>

@@ -9,7 +9,7 @@ interface SpacesState {
   spaces: Space[];
   loading: boolean;
   error: string | null;
-  /** map of spaceId -> resolved thumbnail URL (signed) */
+  /** map of spaceId -> resolved signed image URL */
   imageUrls: Record<string, string>;
   membershipRoles: Record<string, string>;
   membershipCounts: Record<string, number>;
@@ -57,11 +57,11 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
         (
           space: Database["public"]["Tables"]["spaces"]["Row"] & {
             boxes?: { count: number }[];
-          }
+          },
         ) => ({
           ...dbSpaceToAppSpace(space),
           boxCount: space.boxes?.[0]?.count ?? 0,
-        })
+        }),
       );
 
       // Membership roles/counts logic unchanged
@@ -136,9 +136,7 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
     set((state) => {
       const imageUrls = { ...(state.imageUrls || {}), [spaceId]: url };
       // also update spaces array thumbnail_url for immediate UI consistency
-      const spaces = state.spaces.map((s) =>
-        s.id === spaceId ? { ...s, thumbnail_url: url } : s
-      );
+      const spaces = state.spaces.map((s) => s.id === spaceId ? { ...s } : s);
       try {
         localStorage.setItem("spaceImageUrls", JSON.stringify(imageUrls));
         localStorage.setItem("spaces", JSON.stringify(spaces));
@@ -190,13 +188,12 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
     type DbSpaceMember =
       Database["public"]["Functions"]["get_space_members"]["Returns"][number];
 
-    const rows: SpaceMember[] =
-      (data || []).map((r: DbSpaceMember) => ({
-        user_id: r.user_id,
-        role: r.role,
-        display_name: r.display_name ?? null,
-        avatar_url: r.avatar_url ?? null,
-      })) || [];
+    const rows: SpaceMember[] = (data || []).map((r: DbSpaceMember) => ({
+      user_id: r.user_id,
+      role: r.role,
+      display_name: r.display_name ?? null,
+      avatar_url: r.avatar_url ?? null,
+    })) || [];
     set((state) => ({
       membersBySpace: { ...state.membersBySpace, [spaceId]: rows },
       memberLoading: { ...state.memberLoading, [spaceId]: false },
