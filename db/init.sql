@@ -21,7 +21,7 @@ CREATE TABLE boxes (
   space_id uuid REFERENCES spaces(id) NOT NULL,
   location text,
   content text,
-  thumbnail_url text,
+  image_id uuid, -- nullable reference to uploaded image (signed URL resolved via API)
   created_at timestamptz DEFAULT now(),
   modified_at timestamptz DEFAULT now()
 );

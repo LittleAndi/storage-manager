@@ -19,31 +19,31 @@ export type Database = {
           content: string | null
           created_at: string | null
           id: string
+          image_id: string | null
           location: string | null
           modified_at: string | null
           name: string
           space_id: string
-          thumbnail_url: string | null
         }
         Insert: {
           content?: string | null
           created_at?: string | null
           id?: string
+          image_id?: string | null
           location?: string | null
           modified_at?: string | null
           name: string
           space_id: string
-          thumbnail_url?: string | null
         }
         Update: {
           content?: string | null
           created_at?: string | null
           id?: string
+          image_id?: string | null
           location?: string | null
           modified_at?: string | null
           name?: string
           space_id?: string
-          thumbnail_url?: string | null
         }
         Relationships: [
           {
