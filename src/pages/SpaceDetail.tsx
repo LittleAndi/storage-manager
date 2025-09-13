@@ -148,9 +148,9 @@ const SpaceDetail: React.FC = () => {
               {boxes.map(box => (
                 <BoxCard
                   key={box.id}
-                  id={box.id}
                   name={box.name}
                   location={box.location}
+                  imageId={box.image_id}
                   thumbnailUrl={box.image_id ? getCachedImageUrl(box.image_id) : undefined}
                   onOpen={() => navigate(`/spaces/${spaceId}/boxes/${box.id}`)}
                 />

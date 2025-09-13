@@ -10,6 +10,8 @@ import { useSpacePermission } from "@/state/useSpacePermission";
 import EditableTitle from "@/components/EditableTitle";
 import { useEntityUpdate } from "@/hooks/useEntityUpdate";
 import { useSpacesStore } from "@/state/spacesStore";
+import { getCachedImageUrl, resolveImageUrl } from "@/lib/imageUrls";
+import ImagePlaceholder from "@/components/ImagePlaceholder";
 
 const BoxDetail: React.FC = () => {
   const { spaceId, boxId } = useParams();
@@ -29,6 +31,29 @@ const BoxDetail: React.FC = () => {
   }, [spaces, spaceId, fetchSpaces, fetchBoxes]);
 
 
+  const [imageUrl, setImageUrl] = React.useState<string | null>(() => (box?.image_id ? (getCachedImageUrl(box.image_id) || null) : null));
+  const [imgLoading, setImgLoading] = React.useState(false);
+
+  // Resolve image URL if box has image_id and not cached
+  React.useEffect(() => {
+    let cancelled = false;
+    if (!box?.image_id) {
+      setImageUrl(null);
+      return;
+    }
+    const cached = getCachedImageUrl(box.image_id);
+    if (cached) {
+      setImageUrl(cached);
+      return;
+    }
+    setImgLoading(true);
+    resolveImageUrl(box.image_id)
+      .then(url => { if (!cancelled) setImageUrl(url); })
+      .catch(() => { if (!cancelled) setImageUrl(null); })
+      .finally(() => { if (!cancelled) setImgLoading(false); });
+    return () => { cancelled = true; };
+  }, [box?.image_id]);
+
   if (!box) {
     return (
       <AppShell>
@@ -47,6 +72,22 @@ const BoxDetail: React.FC = () => {
       </div>
       {(
         <div className="mb-6">
+          <div className="mb-4">
+            <div className="font-semibold mb-1">Image:</div>
+            {box.image_id ? (
+              imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={box.name}
+                  className="max-h-64 rounded border object-contain bg-white"
+                />
+              ) : (
+                <ImagePlaceholder className="h-40 w-40 rounded" loading={imgLoading} />
+              )
+            ) : (
+              <ImagePlaceholder className="h-40 w-40 rounded" />
+            )}
+          </div>
           <div className="mb-2 flex items-center gap-2"><span className="font-semibold">Name:</span>
             <EditableTitle value={box.name} canEdit={permission.canEdit} onSave={async (name) => updateBoxName({ name })} />
           </div>
