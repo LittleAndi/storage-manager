@@ -114,7 +114,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({ name, location, memberCount, boxC
       {finalUrl && !erroredThumb ? (
         <img
           src={finalUrl}
-          alt={name}
+          alt={`${name} image`}
           className="w-16 h-16 rounded object-cover mr-4 border"
           loading="lazy"
           onError={() => setErroredThumb(true)}
@@ -122,7 +122,8 @@ const SpaceCard: React.FC<SpaceCardProps> = ({ name, location, memberCount, boxC
       ) : (
         <img
           src={`data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><rect width='100%25' height='100%25' fill='%23e5e7eb'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-family='Arial, Helvetica, sans-serif' font-size='18'>No image</text></svg>`}
-          alt="placeholder"
+          alt=""
+          aria-hidden="true"
           className="w-16 h-16 rounded object-cover mr-4 border"
           loading="lazy"
         />

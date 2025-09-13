@@ -69,11 +69,11 @@ const BoxCard: React.FC<BoxCardProps> = ({ name, location, itemCount, thumbnailU
       aria-label={`Open box ${name}`}
     >
       {finalUrl ? (
-        <img src={finalUrl} alt={name} className="w-12 h-12 rounded mr-4 object-cover" />
+        <img src={finalUrl} alt={`${name} image`} className="w-12 h-12 rounded mr-4 object-cover" />
       ) : imageId ? (
-        <ImagePlaceholder className="w-12 h-12 rounded mr-4" loading={loading} />
+        <ImagePlaceholder className="w-12 h-12 rounded mr-4" loading={loading} label="Loading image" />
       ) : (
-        <ImagePlaceholder className="w-12 h-12 rounded mr-4" />
+        <ImagePlaceholder className="w-12 h-12 rounded mr-4" label="No image" />
       )}
       <div className="flex-1">
         <h3 className="text-md font-semibold">{name}</h3>

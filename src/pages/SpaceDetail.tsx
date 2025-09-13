@@ -96,7 +96,7 @@ const SpaceDetail: React.FC = () => {
         <MemberList spaceId={space.id} />
       </div>
       {space.image_id && getCachedImageUrl(space.image_id) && (
-        <img src={getCachedImageUrl(space.image_id)} alt={space.name} className="w-32 h-32 rounded mb-4" />
+        <img src={getCachedImageUrl(space.image_id)} alt={`${space.name} image`} className="w-32 h-32 rounded mb-4" />
       )}
       <div className="mb-4 flex gap-2 flex-wrap">
         <Button

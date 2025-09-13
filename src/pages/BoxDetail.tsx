@@ -92,7 +92,7 @@ const BoxDetail: React.FC = () => {
               imageUrl ? (
                 <img
                   src={imageUrl}
-                  alt={box.name}
+                  alt={`${box.name} image`}
                   className="max-h-64 rounded border object-contain bg-white"
                 />
               ) : (

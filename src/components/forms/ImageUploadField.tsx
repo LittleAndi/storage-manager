@@ -83,7 +83,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
           <div className="mt-2">
             <img
               src={value.preview_url}
-              alt="image preview"
+              alt="Selected image preview"
               style={{ width: size, height: size }}
               className="object-cover rounded border"
             />
@@ -116,7 +116,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
       {value?.preview_url && (
         <img
           src={value.preview_url}
-          alt="image preview"
+          alt="Selected image preview"
           style={{ width: size, height: size }}
           className="object-cover rounded border"
         />
