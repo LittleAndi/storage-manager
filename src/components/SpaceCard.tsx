@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useSpacesStore } from "@/state/spacesStore";
 import { Button } from "@/components/ui/button";
 import { TrashIcon } from "@/components/ui/trash-icon";
 import { toast } from "sonner";
+import { resolveImageUrl, getCachedImageUrl } from "@/lib/imageUrls";
 
 export interface SpaceCardProps {
   id: string;
@@ -13,7 +14,7 @@ export interface SpaceCardProps {
   memberCount?: number;
   boxCount?: number;
   owner?: string | null;
-  /** camelCase variant (internal UI prop) */
+  /** Optional signed URL already known (e.g., recently uploaded) */
   thumbnailUrl?: string;
   /** optional persisted image id (UUID) for server-side stored thumbnails */
   imageId?: string | null;
@@ -28,126 +29,50 @@ export interface SpaceCardProps {
   onDelete?: () => void;
 }
 
-// Simple in-memory cache for resolved temporary URLs to avoid repeated network calls
-const imageUrlCache = new Map<string, string>();
-const inFlightRequests = new Map<string, Promise<string | null>>();
-
-async function fetchImageUrlFromApi(id: string): Promise<string | null> {
-  try {
-    const resp = await fetch("/api/images/urls", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify([id]),
-    });
-    if (!resp.ok) return null;
-    const body = await resp.json();
-    const entry = body?.[id];
-    // C# KeyValuePair serializes to { Key: ..., Value: ... }
-    const url = entry?.Value ?? entry?.value ?? null;
-    return typeof url === "string" && url.length > 0 ? url : null;
-  } catch {
-    return null;
-  }
-}
-
-const SpaceCard: React.FC<SpaceCardProps> = ({
-  name,
-  location,
-  memberCount,
-  boxCount,
-  owner,
-  thumbnailUrl,
-  imageId,
-  onOpen,
-  isShared,
-  ownerName,
-  role,
-  onDelete,
-}) => {
+const SpaceCard: React.FC<SpaceCardProps> = ({ name, location, memberCount, boxCount, owner, thumbnailUrl, imageId, onOpen, isShared, ownerName, role, onDelete }) => {
   const canDelete = (boxCount ?? 0) === 0;
-  const [resolvedThumb, setResolvedThumb] = React.useState<string | undefined>(thumbnailUrl ?? undefined);
-  const [erroredThumb, setErroredThumb] = React.useState<boolean>(false);
   const setSpaceImageUrl = useSpacesStore((s) => s.setSpaceImageUrl);
-  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+  const [erroredThumb, setErroredThumb] = useState(false);
+  const [resolvedUrl, setResolvedUrl] = useState<string | undefined>(() => (imageId ? getCachedImageUrl(imageId) || undefined : undefined));
 
-  // If we already have a thumbnailUrl prop, prefer that. Otherwise try to resolve using imageId lazily.
-  React.useEffect(() => {
-    if (thumbnailUrl) {
-      setResolvedThumb(thumbnailUrl);
-      setErroredThumb(false);
-      return;
-    }
-    if (!imageId) return;
+  // Observe visibility for lazy load (skip if thumbnailUrl already provided)
+  useEffect(() => {
+    if (!imageId || thumbnailUrl) return;
+    if (resolvedUrl) return;
+    const node = ref.current;
+    if (!node) return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((e) => e.isIntersecting && setVisible(true));
+    }, { rootMargin: "200px" });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [imageId, thumbnailUrl, resolvedUrl]);
 
-    // If cached, use it
-    if (imageUrlCache.has(imageId)) {
-      setResolvedThumb(imageUrlCache.get(imageId)!);
-      return;
-    }
-
-    let observer: IntersectionObserver | null = null;
-    const el = containerRef.current;
-    const onIntersect = (entries: IntersectionObserverEntry[]) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          // Deduplicate in-flight
-          let p = inFlightRequests.get(imageId);
-          if (!p) {
-            setErroredThumb(false);
-            p = fetchImageUrlFromApi(imageId).then((u) => {
-              if (u) imageUrlCache.set(imageId, u);
-              inFlightRequests.delete(imageId);
-              return u;
-            });
-            inFlightRequests.set(imageId, p);
-          }
-          p.then((u) => {
-            if (u) {
-              setResolvedThumb(u);
-              try { setSpaceImageUrl(imageId, u); } catch { /* ignore */ }
-            }
-            if (observer && el) {
-              observer.unobserve(el);
-            }
-          }).catch(() => {
-            setErroredThumb(true);
-          });
-          break;
-        }
-      }
-    };
-
-    if (el && typeof IntersectionObserver !== "undefined") {
-      observer = new IntersectionObserver(onIntersect, { root: null, rootMargin: "200px" });
-      observer.observe(el);
-    } else {
-      // Fallback: fetch immediately
-      let p = inFlightRequests.get(imageId);
-      if (!p) {
-        setErroredThumb(false);
-        p = fetchImageUrlFromApi(imageId).then((u) => {
-          if (u) imageUrlCache.set(imageId, u);
-          inFlightRequests.delete(imageId);
-          return u;
-        });
-        inFlightRequests.set(imageId, p);
-      }
-      p.then((u) => {
-        if (u) {
-          setResolvedThumb(u);
+  // Resolve when visible
+  useEffect(() => {
+    if (!imageId || resolvedUrl || thumbnailUrl) return;
+    if (!visible) return;
+  let cancelled = false;
+    setErroredThumb(false);
+    resolveImageUrl(imageId)
+      .then((u) => {
+        if (!cancelled && u) {
+          setResolvedUrl(u);
           try { setSpaceImageUrl(imageId, u); } catch { /* ignore */ }
         }
-      }).catch(() => setErroredThumb(true));
-    }
+      })
+      .catch(() => { if (!cancelled) setErroredThumb(true); })
+  .finally(() => { /* no-op */ });
+    return () => { cancelled = true; };
+  }, [visible, imageId, resolvedUrl, thumbnailUrl, setSpaceImageUrl]);
 
-    return () => {
-      if (observer && el) observer.unobserve(el);
-    };
-  }, [thumbnailUrl, imageId, setSpaceImageUrl]);
+  const finalUrl = thumbnailUrl || resolvedUrl;
 
   return (
     <div
-      ref={containerRef}
+  ref={ref}
       className={`relative group bg-white rounded shadow p-4 flex items-center cursor-pointer transition-colors ${
         isShared ? "bg-indigo-50 dark:bg-indigo-900/20" : "bg-background hover:bg-accent/50"
       }`}
@@ -186,9 +111,9 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
         )
       )}
       {/* Render resolved image when available and not errored, otherwise show placeholder (150x150). */}
-      {resolvedThumb && !erroredThumb ? (
+      {finalUrl && !erroredThumb ? (
         <img
-          src={resolvedThumb}
+          src={finalUrl}
           alt={name}
           className="w-16 h-16 rounded object-cover mr-4 border"
           loading="lazy"
