@@ -98,6 +98,8 @@ export const useBoxesStore = create<BoxesState>((set, get) => ({
             ),
         }),
     removeBox: async (id) => {
+        const target = get().boxes.find(b => b.id === id);
+        const imageId = target?.image_id;
         const { error } = await supabase.from("boxes").delete().eq("id", id);
         if (error) {
             set({ error: error.message });
@@ -106,7 +108,12 @@ export const useBoxesStore = create<BoxesState>((set, get) => ({
         }
         const updated = get().boxes.filter((b) => b.id !== id);
         set({ boxes: updated });
-        // Optionally update localStorage for the current space
+        // Fire-and-forget image deletion (ignore errors so UI stays responsive)
+        if (imageId) {
+            fetch(`/api/images/${imageId}`, { method: "DELETE" }).catch(e => {
+                console.warn("Failed deleting image for box", imageId, e);
+            });
+        }
     },
     setBoxImageUrl: (boxId, url) => {
         set((state) => {

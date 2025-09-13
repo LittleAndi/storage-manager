@@ -75,54 +75,84 @@ Storage Manager is a modern, responsive Single Page Application (SPA) for managi
 
 ## Image Handling Architecture
 
-The application now uses a unified `image_id` field (UUID) for both Spaces and Boxes instead of the legacy `thumbnail_url` column (removed from the schema). Images are uploaded to a backend (Azure Function endpoints) and resolved to signed URLs on demand.
+The application uses a unified `image_id` (UUID) for both Spaces and Boxes. Each image lives as a prefix in Azure Blob Storage containing two blobs: the original upload and a generated thumbnail. Legacy `thumbnail_url` has been removed in favor of this canonical reference.
+
+### Storage Layout
+
+```
+<imageId>/original.<ext>
+<imageId>/thumbnail.<ext>
+```
+
+### Endpoints (Current)
+
+| Method | Path                     | Purpose                                      | Notes |
+|--------|--------------------------|----------------------------------------------|-------|
+| POST   | `/api/images/{imageId}`  | Upload file (multipart); creates original + thumbnail; returns preview URL (thumbnail SAS) | Sets `status=unconfirmed` metadata |
+| PUT    | `/api/images/{imageId}`  | Confirm image & attach ownership metadata    | Body: `{ "metadata_key": "box_id|space_id", "metadata_value": "<uuid>" }` sets `status=confirmed` |
+| POST   | `/api/images/urls`       | Batch resolve signed URLs for ids            | Returns map of id -> `{ key, value }` (one blob's latest seen key/value) |
+| DELETE | `/api/images/{imageId}`  | Delete all blobs under image prefix          | Used when a box/space is deleted |
 
 ### Lifecycle
 
-1. User selects a file in an `ImageUploadField`.
-2. The file is uploaded (POST) to `/api/images/{imageId}` returning a temporary `preview_url` (or a blob/object URL fallback if not returned).
-3. On entity creation or once an owning entity id exists, a confirmation request (PUT) to `/api/images/{imageId}` attaches metadata (e.g., `space_id` or `box_id`).
-4. Display components (cards, details) lazily resolve signed URLs via a batch endpoint `/api/images/urls` using helpers in `src/lib/imageUpload.ts` + `src/lib/imageUrls.ts`.
-5. URLs are cached in-memory with in‑flight promise de‑duplication. Space and Box stores also persist a simple map for faster warm loads.
+1. UI generates/chooses an `imageId` (UUID) and uploads file via `uploadImage()`.
+2. Backend stores original, generates a 150x150 thumbnail, sets metadata `status=unconfirmed`.
+3. When entity (box/space) creation succeeds, client calls `confirmImage()` which:
+  - Adds ownership key (`box_id` or `space_id`).
+  - Updates `status=confirmed` on both blobs.
+4. Display components resolve signed URLs lazily using `resolveImageUrl()` / `prefetchImageUrls()` which call the batch endpoint.
+5. Deleting a box or space calls `DELETE /api/images/{imageId}` (fire-and-forget) to remove both blobs.
 
-### Clearing / Removing Images
+### Client Utilities
 
-Edit modals (`EditSpaceModal`, `EditBoxModal`) allow removing an existing image. When the user clicks Remove:
+- `uploadImage(file, providedId?)` – handles upload & returns `{ imageId, previewUrl? }`.
+- `confirmImage(imageId, { metadataKey, metadataValue })` – sets ownership + confirmed state (safe to retry).
+- `getImageUrls(imageIds[])` – batch fetch mapping; front-end normalizes to `Record<imageId,string>`.
+- `resolveImageUrl(imageId)` & `prefetchImageUrls(ids)` – in‑memory cached resolution (coalesces requests).
 
-- The local form `image_id` is set to an empty string.
-- On submit, we transform an empty string into `null` and send that in the patch to Supabase.
-- The `useEntityUpdate` hook normalizes a `null` image to `undefined` in local state so UI reverts to placeholder.
+### Caching Strategy
 
-### Utilities
+- In-memory map keyed by `imageId` (session scope).
+- Concurrent lookups deduplicated via a shared promise.
+- Per-entity URL maps (space/box) optionally persisted to `localStorage` for perceived speed on reload.
 
-- `uploadImage(file, optionalImageId?)` – performs initial upload.
-- `confirmImage(imageId, { metadataKey, metadataValue })` – binds uploaded image to an entity.
-- `getImageUrls([ids])` – batch maps image ids to signed URLs.
-- `resolveImageUrl(id)` – cached single-id resolution (wraps batch call under the hood) with in‑flight coalescing.
-- `prefetchImageUrls(ids)` – opportunistic batch prefetch.
+### Deletion Behavior
 
-### Components
+- Box or space deletion triggers removal of its referenced image via DELETE endpoint.
+- (Current) Removing an image from an entity form sets `image_id` to null in DB but does NOT yet automatically delete the old blobs (a future enhancement could perform replacement cleanup).
 
-- `ImageUploadField` handles file selection, upload progress state, preview (server preview URL or local object URL), and clearing.
-- `SpaceCard` & `BoxCard` both leverage the shared resolver logic for lazy loading on intersection.
+### Metadata & Orphan Detection
+
+Metadata keys used:
+
+- `status=unconfirmed|confirmed`
+- `box_id=<uuid>` or `space_id=<uuid>` (only one is expected)
+
+Potential orphans:
+
+1. Unconfirmed images older than a grace period (user abandoned form).
+2. Images whose owning entity was deleted before confirm (rare; they remain `status=unconfirmed`).
+3. Disassociated images (entity `image_id` cleared) – pending automated cleanup.
+
+### Planned Enhancements
+
+- Timer-trigger function to purge `status=unconfirmed` images > 24h.
+- Cleanup for images whose `image_id` is no longer referenced in DB.
+- Optional migration from metadata to Blob Index Tags for native lifecycle policies.
+- Image replacement workflow (delete prior image after successful new confirm).
+- AuthN/AuthZ on image endpoints (currently `Anonymous` for prototype convenience).
 
 ### Error Handling
 
-- Upload failures throw and are surfaced in form UI.
-- Missing or deleted images resolve to placeholders (no hard failures).
-- Batch endpoint returning `null` for an id simply omits it from the resulting URL map.
+- Upload errors surface via thrown `ImageUploadError` (frontend shows message).
+- Failed confirm attempts are safe to retry (idempotent metadata merge).
+- Missing images simply produce placeholders; resolver tolerates absent IDs.
 
----
+### Operational Guidance
 
-## API Endpoints (Images)
-
-| Method | Path                 | Purpose                                | Body                                 | Response (200)                          |
-|--------|----------------------|----------------------------------------|--------------------------------------|-----------------------------------------|
-| POST   | `/api/images/{id}`   | Upload raw image bytes (multipart)     | `FormData` with file                 | `{ image_id, preview_url? }`            |
-| PUT    | `/api/images/{id}`   | Confirm & attach metadata (entity id)  | JSON `{ key, value }` or similar     | `{ message: "ok" }`                     |
-| POST   | `/api/images/urls`   | Batch resolve signed URLs              | JSON array of image ids `["id"]`     | `{ id: { key, value } | null, ... }`    |
-
-Note: The batch resolver accepts an array and returns a map. Missing entries may be present as `null`. The frontend normalizes to `{ [id]: string }` omitting nulls.
+- Safe to delete any prefix where blobs have `status=unconfirmed` and are older than configured grace period (e.g., 24h).
+- A future maintenance script should: list unique prefixes, join with DB `boxes.image_id`/`spaces.image_id`, delete unreferenced or stale unconfirmed.
+- If metadata write fails for one blob, function logs a warning; confirm can be reissued.
 
 ---
 

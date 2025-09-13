@@ -60,6 +60,18 @@ public class UploadImage
             string originalBlobName = $"{imageId}/original{extension}";
             var originalBlobClient = containerClient.GetBlobClient(originalBlobName);
             await originalBlobClient.UploadAsync(memoryStream, overwrite: true);
+            try
+            {
+                // Set initial metadata so cleanup / lifecycle jobs can detect abandoned uploads
+                await originalBlobClient.SetMetadataAsync(new Dictionary<string, string>
+                {
+                    ["status"] = "unconfirmed"
+                });
+            }
+            catch (Exception metaEx)
+            {
+                log.LogWarning(metaEx, "Failed setting metadata on original blob {OriginalBlobName}", originalBlobName);
+            }
             log.LogInformation("Uploaded original image: {OriginalBlobName}", originalBlobName);
 
             // 2. NEW: Create and upload the thumbnail
@@ -87,6 +99,17 @@ public class UploadImage
 
                 // Upload the thumbnail stream
                 await thumbnailBlobClient.UploadAsync(thumbnailStream, overwrite: true);
+                try
+                {
+                    await thumbnailBlobClient.SetMetadataAsync(new Dictionary<string, string>
+                    {
+                        ["status"] = "unconfirmed"
+                    });
+                }
+                catch (Exception metaThumbEx)
+                {
+                    log.LogWarning(metaThumbEx, "Failed setting metadata on thumbnail blob {ThumbnailBlobName}", thumbnailBlobName);
+                }
                 log.LogInformation("Uploaded thumbnail image: {ThumbnailBlobName}", thumbnailBlobName);
             }
 

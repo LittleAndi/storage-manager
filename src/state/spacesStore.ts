@@ -154,17 +154,23 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
       ),
     }),
   removeSpace: async (id) => {
-    // Remove from Supabase database
+    const target = get().spaces.find(s => s.id === id);
+    const imageId = target?.image_id;
     const { error } = await supabase.from("spaces").delete().eq("id", id);
     if (error) {
       set({ error: error.message });
       console.error(error.message);
       return;
     }
-    // Remove from local state and localStorage
     const updated = get().spaces.filter((s) => s.id !== id);
     set({ spaces: updated });
     localStorage.setItem("spaces", JSON.stringify(updated));
+    if (imageId) {
+      fetch(`/api/images/${imageId}`, { method: "DELETE" }).catch(e => {
+        console.warn("Failed deleting image for space", imageId, e);
+      });
+    }
+    // NOTE: If boxes are not cascading in DB, you may need a backend function to cascade delete boxes & their images.
   },
   fetchSpaceMembers: async (spaceId: string) => {
     const { memberLoading } = get();
