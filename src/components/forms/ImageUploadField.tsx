@@ -10,15 +10,32 @@ interface ImageFieldValue {
 }
 
 interface ImageUploadFieldProps {
-  /** name of the field in react-hook-form; will store ImageFieldValue */
+  /** name of the field in react-hook-form; will store ImageFieldValue (object) */
   name: string;
   label?: string;
   description?: string;
-  /** Optional callback after successful upload */
+  /** Called after successful upload (imageId + preview) */
   onUploaded?: (result: UploadResult) => void;
+  /** Visual style. 'simple' matches the original Space form look, 'compact' is small inline buttons. */
+  variant?: 'simple' | 'compact';
+  /** Override preview size (px). Default 128 for simple, 96 for compact. */
+  previewSize?: number;
+  /** Whether a clear/remove control should be rendered even if no image_id yet. */
+  canClear?: boolean;
+  /** Callback invoked when user clears image (after field state reset). */
+  onClear?: () => void;
 }
 
-export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({ name, label = "Image", description, onUploaded }) => {
+export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
+  name,
+  label = "Image",
+  description,
+  onUploaded,
+  variant = 'simple',
+  previewSize,
+  canClear = true,
+  onClear,
+}) => {
   const { setValue, watch } = useFormContext();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const value = watch(name) as ImageFieldValue | undefined;
@@ -44,13 +61,51 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({ name, label 
 
   function handleRemove() {
     setValue(name as any, undefined, { shouldDirty: true, shouldTouch: true }); // eslint-disable-line @typescript-eslint/no-explicit-any
+    onClear?.();
+  }
+
+  const size = previewSize ?? (variant === 'simple' ? 128 : 96);
+
+  if (variant === 'simple') {
+    return (
+      <div className="space-y-2">
+        <label className="text-sm font-medium" htmlFor={`${name}-input`}>{label}</label>
+        <Input
+          id={`${name}-input`}
+          ref={fileInputRef}
+          onChange={handleFileChange}
+            type="file"
+          accept="image/*"
+          className="block w-full text-sm"
+          disabled={uploading}
+        />
+        {value?.preview_url && (
+          <div className="mt-2">
+            <img
+              src={value.preview_url}
+              alt="image preview"
+              style={{ width: size, height: size }}
+              className="object-cover rounded border"
+            />
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          {uploading && <span className="text-xs text-muted-foreground">Uploading...</span>}
+          {(canClear && (value?.image_id || value?.preview_url)) && !uploading && (
+            <button type="button" onClick={handleRemove} className="text-xs underline text-destructive">{value?.image_id ? 'Remove' : 'Clear'}</button>
+          )}
+        </div>
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        {error && <p className="text-xs text-destructive">{error}</p>}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium flex items-center gap-2">
         {label}
-        {value?.image_id && (
+        {(canClear && (value?.image_id || value?.preview_url)) && (
           <button
             type="button"
             onClick={handleRemove}
@@ -62,7 +117,8 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({ name, label 
         <img
           src={value.preview_url}
           alt="image preview"
-          className="w-24 h-24 object-cover rounded border"
+          style={{ width: size, height: size }}
+          className="object-cover rounded border"
         />
       )}
       <div className="flex gap-2 flex-wrap">

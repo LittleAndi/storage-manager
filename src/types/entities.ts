@@ -8,10 +8,6 @@ export interface Space {
   location?: string;
   owner_id: string;
   owner?: string | null;
-  // Deprecated: thumbnail_url kept temporarily for backward compatibility with
-  // any cached client state referencing older spaces rows. Will be removed once
-  // all code paths rely solely on image_id and signed URLs.
-  thumbnail_url?: string;
   // Primary image reference (UUID key used to fetch signed URL via image API)
   image_id?: string;
   created_at?: string | null; // ISO timestamp

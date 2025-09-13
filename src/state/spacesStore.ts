@@ -135,7 +135,6 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
     // update in-memory map and persist
     set((state) => {
       const imageUrls = { ...(state.imageUrls || {}), [spaceId]: url };
-      // also update spaces array thumbnail_url for immediate UI consistency
       const spaces = state.spaces.map((s) => s.id === spaceId ? { ...s } : s);
       try {
         localStorage.setItem("spaceImageUrls", JSON.stringify(imageUrls));

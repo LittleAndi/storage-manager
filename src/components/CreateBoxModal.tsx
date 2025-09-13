@@ -93,8 +93,9 @@ const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate
             <div>
               <ImageUploadField
                 name="image_upload"
-                label="Box Image"
-                description="Optional image representing this box."
+                label="Box Image (optional)"
+                description="Upload an optional image for this box."
+                variant="simple"
                 onUploaded={(r) => {
                   form.setValue("image_id", r.imageId, { shouldDirty: true, shouldTouch: true });
                 }}

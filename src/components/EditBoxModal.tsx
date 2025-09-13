@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { ImageUploadField } from "@/components/forms/ImageUploadField";
+import { resolveImageUrl } from "@/lib/imageUrls";
 import { useEntityUpdate } from "@/hooks/useEntityUpdate";
 import type { Box } from "@/types/entities";
 import { toast } from "sonner";
@@ -29,6 +30,20 @@ const EditBoxModal: React.FC<EditBoxModalProps> = ({ open, onClose, box }) => {
     },
   });
 
+  // Pre-populate upload field with existing image (so ImageUploadField shows it) then it will replace on new upload.
+  React.useEffect(() => {
+    let active = true;
+    if (box.image_id) {
+      resolveImageUrl(box.image_id).then(url => {
+        if (active && url) {
+          form.setValue('image_upload_internal' as any, { image_id: box.image_id, preview_url: url }, { shouldDirty: false, shouldTouch: false }); // eslint-disable-line @typescript-eslint/no-explicit-any
+          form.setValue('image_id', box.image_id!, { shouldDirty: false, shouldTouch: false });
+        }
+      }).catch(e => console.warn('Failed to resolve existing box image', e));
+    }
+    return () => { active = false; };
+  }, [box.image_id, form]);
+
   const { mutate, loading } = useEntityUpdate<BoxFormValues>({
     kind: "box",
     entity: box,
@@ -37,7 +52,8 @@ const EditBoxModal: React.FC<EditBoxModalProps> = ({ open, onClose, box }) => {
   });
 
   async function onSubmit(values: BoxFormValues) {
-    await mutate({ ...values, image_id: values.image_id || undefined });
+    const image_id = values.image_id ? values.image_id : null;
+    await mutate({ ...values, image_id } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     onClose();
   }
 
@@ -77,17 +93,22 @@ const EditBoxModal: React.FC<EditBoxModalProps> = ({ open, onClose, box }) => {
                 <FormMessage />
               </FormItem>
             )} />
-            {/* Image editing: reuse upload field; on upload set image_id */}
+            {/* Image editing: single preview managed by ImageUploadField */}
             <div>
+              {/* We pass a field name that exists in the schema: reuse image_id but keep preview ephemeral by wrapping inside object field not saved */}
               <ImageUploadField
-                name="edit_image_upload"
+                name="image_upload_internal"
                 label="Box Image"
-                description="Upload or replace the box image."
-                onUploaded={(r) => form.setValue("image_id", r.imageId, { shouldDirty: true, shouldTouch: true })}
+                description="Upload, change, or remove the box image."
+                variant="simple"
+                canClear={true}
+                onUploaded={(r) => {
+                  form.setValue('image_id', r.imageId, { shouldDirty: true, shouldTouch: true });
+                }}
+                onClear={() => {
+                  form.setValue('image_id', '', { shouldDirty: true, shouldTouch: true });
+                }}
               />
-              {box.image_id && !form.watch("image_id") && (
-                <p className="text-xs text-muted-foreground mt-1">Existing image will remain unless replaced.</p>
-              )}
             </div>
             <AlertDialogFooter>
               <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save"}</Button>
