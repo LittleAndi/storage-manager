@@ -29,9 +29,9 @@ describe("imageUrls caching + resolution", () => {
         const full = await resolveImageUrl("abc", { variant: "original" });
         expect(full).toBe("https://cdn/x/abc-orig.jpg");
         expect(spy).toHaveBeenCalledTimes(1);
-        // Second call should hit cache only
+        // Second call should hit cache only and default to thumbnail variant
         const url2 = await resolveImageUrl("abc");
-        expect(url2).toBe("https://cdn/x/abc.jpg");
+        expect(url2).toBe("https://cdn/x/abc-thumb.jpg");
         expect(spy).toHaveBeenCalledTimes(1);
     });
 

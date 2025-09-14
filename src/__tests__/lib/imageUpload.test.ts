@@ -83,24 +83,45 @@ describe("imageUpload helper", () => {
         expect(spy).not.toHaveBeenCalled();
     });
 
-    it("getImageUrls returns mapping for provided ids", async () => {
+    it("getImageUrls returns structured mapping with thumbnail/original/blobs", async () => {
         mockFetch(async (input, init) => {
             expect(input).toBe("/api/images/urls");
             expect(init?.method).toBe("POST");
             expect(init?.body).toBe(JSON.stringify(["img1", "img2"]));
             return new Response(
                 JSON.stringify({
-                    img1: { key: "thumb", value: "https://example/img1.png" },
-                    img2: { key: "thumb", value: "https://example/img2.png" },
+                    img1: [
+                        {
+                            name: "img1-thumb",
+                            url: "https://example/img1-thumb.webp",
+                            type: "thumbnail",
+                        },
+                        {
+                            name: "img1-orig",
+                            url: "https://example/img1-orig.webp",
+                            type: "original",
+                        },
+                    ],
+                    img2: [
+                        {
+                            name: "img2-orig",
+                            url: "https://example/img2-orig.webp",
+                            type: "original",
+                        },
+                    ],
                 }),
                 { status: 200 },
             );
         });
         const res = await getImageUrls(["img1", "img2"]);
-        expect(res).toEqual({
-            img1: "https://example/img1.png",
-            img2: "https://example/img2.png",
-        });
+        expect(Object.keys(res)).toEqual(["img1", "img2"]);
+        expect(res.img1.thumbnail).toBe("https://example/img1-thumb.webp");
+        expect(res.img1.original).toBe("https://example/img1-orig.webp");
+        // For img2 only original provided; function should fallback to use same for thumbnail & original
+        expect(res.img2.thumbnail).toBe("https://example/img2-orig.webp");
+        expect(res.img2.original).toBe("https://example/img2-orig.webp");
+        expect(res.img1.blobs.length).toBe(2);
+        expect(res.img2.blobs.length).toBe(1);
     });
 
     it("uploadAndMaybeConfirm confirms immediately when entityId and metadataKey provided", async () => {

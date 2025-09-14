@@ -32,16 +32,38 @@ global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
     // We need to check for /api/images/urls first, otherwise 'urls' will be interpreted as a imageId
     if (url === "/api/images/urls" && init?.method === "POST") {
         const ids: string[] = JSON.parse(init.body as string);
-        const result: Record<string, { key: string; value: string } | null> =
-            {};
+        const result: Record<
+            string,
+            Array<{ name: string; url: string; type: string }> | null
+        > = {};
         ids.forEach((id) => {
             if (id === "missing") {
-                // simulate backend returning null entry for missing id
+                // backend returns null for missing id
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 result[id] = null;
+            } else if (id === "a1") {
+                result[id] = [
+                    {
+                        name: `${id}-thumb`,
+                        url: `https://cdn/${id}-thumb.jpg`,
+                        type: "thumbnail",
+                    },
+                    {
+                        name: `${id}-orig`,
+                        url: `https://cdn/${id}.jpg`,
+                        type: "original",
+                    },
+                ];
             } else {
-                result[id] = { key: id, value: `https://cdn/${id}.jpg` };
+                // a2 only has original to test fallback logic
+                result[id] = [
+                    {
+                        name: `${id}-orig`,
+                        url: `https://cdn/${id}.jpg`,
+                        type: "original",
+                    },
+                ];
             }
         });
         return makeResponse(result);
@@ -117,12 +139,14 @@ describe("image upload + confirm + batch URL flow", () => {
         expect(putCall).toBeTruthy();
     });
 
-    it("getImageUrls maps ids and skips missing", async () => {
+    it("getImageUrls maps ids and skips missing (structured)", async () => {
         const map = await getImageUrls(["a1", "a2", "missing"]);
-        expect(map).toEqual({
-            a1: "https://cdn/a1.jpg",
-            a2: "https://cdn/a2.jpg",
-        });
+        expect(Object.keys(map)).toEqual(["a1", "a2"]);
+        expect(map.a1.thumbnail).toBe("https://cdn/a1-thumb.jpg");
+        expect(map.a1.original).toBe("https://cdn/a1.jpg");
+        // a2 only original provided; thumbnail fallback to original
+        expect(map.a2.thumbnail).toBe("https://cdn/a2.jpg");
+        expect(map.a2.original).toBe("https://cdn/a2.jpg");
         expect(map).not.toHaveProperty("missing");
     });
 });
