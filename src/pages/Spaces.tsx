@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 
 const Spaces: React.FC = () => {
   const spaces = useSpacesStore((state) => state.spaces);
+  const loading = useSpacesStore((state) => state.loading);
   const membershipRoles = useSpacesStore((state) => state.membershipRoles);
   const fetchSpaces = useSpacesStore((state) => state.fetchSpaces);
   const removeSpace = useSpacesStore((state) => state.removeSpace);
@@ -44,9 +45,8 @@ const Spaces: React.FC = () => {
     ids.forEach(id => resolveImageUrl(id));
   }, [filteredSpaces]);
   
-  // Loading state: spaces is undefined/null before fetchSpaces resolves
-  // If spaces is undefined/null, or if a loading flag is set, show loading
-  const isLoading = !Array.isArray(spaces) || (Array.isArray(spaces) && spaces.length === 0 && !deletingId && !locations.length);
+  // Use store loading flag. After loading completes, if there are no spaces show empty state.
+  const isLoading = loading;
 
   const { ownedSpaces, sharedSpaces } = React.useMemo(() => {
     const owned: typeof spaces = [];
@@ -96,8 +96,10 @@ const Spaces: React.FC = () => {
       <div className="flex flex-col gap-6">
         {isLoading ? (
           <Spinner size={24} label="Loading spaces..." className="py-8" />
+        ) : Array.isArray(spaces) && spaces.length === 0 ? (
+          <div className="text-muted-foreground py-8">No spaces.</div>
         ) : Array.isArray(spaces) && filteredSpaces.length === 0 ? (
-          <div className="text-muted-foreground">No spaces found.</div>
+          <div className="text-muted-foreground py-8">No spaces match the selected filters.</div>
         ) : (
           <>
       <SpacesSection
