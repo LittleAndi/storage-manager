@@ -34,19 +34,26 @@ public class GetImageUrls(ILogger<GetImageUrls> log)
 
         var blobServiceClient = new BlobServiceClient(connectionString);
         var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
-        var result = new Dictionary<string, KeyValuePair<string, string>>();
+        // Result structure: imageId -> list of blobs (name, url, type)
+        var result = new Dictionary<string, List<object>>();
         foreach (var imageId in imageIds ?? [])
         {
             var blobPrefix = $"{imageId}/";
-            var urls = new KeyValuePair<string, string>();
+            var blobsForImage = new List<object>();
             await foreach (var blobItem in containerClient.GetBlobsAsync(prefix: blobPrefix))
             {
                 var blobClient = containerClient.GetBlobClient(blobItem.Name);
                 var sasUri = blobClient.GenerateSasUri(Azure.Storage.Sas.BlobSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1));
                 var fileName = Path.GetFileNameWithoutExtension(blobItem.Name);
-                urls = new KeyValuePair<string, string>(fileName, sasUri.ToString());
+                blobItem.Metadata.TryGetValue("type", out var typeValue);
+                blobsForImage.Add(new
+                {
+                    name = fileName,
+                    url = sasUri.ToString(),
+                    type = typeValue ?? string.Empty
+                });
             }
-            result[imageId] = urls;
+            result[imageId] = blobsForImage;
         }
         return new OkObjectResult(result);
     }

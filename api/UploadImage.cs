@@ -89,7 +89,8 @@ public class UploadImage(ILogger<UploadImage> log)
                     {
                         ["status"] = "unconfirmed",
                         ["source_ext"] = suppliedExtension ?? string.Empty,
-                        ["source_format"] = decodedFormat?.Name ?? "unknown"
+                        ["source_format"] = decodedFormat?.Name ?? "unknown",
+                        ["type"] = "original"
                     }
                 });
 
@@ -121,7 +122,8 @@ public class UploadImage(ILogger<UploadImage> log)
                     Metadata = new Dictionary<string, string>
                     {
                         ["status"] = "unconfirmed",
-                        ["derived_from"] = originalBlobName
+                        ["derived_from"] = originalBlobName,
+                        ["type"] = "thumbnail"
                     }
                 });
 
