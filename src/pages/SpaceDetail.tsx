@@ -15,6 +15,8 @@ import ShareSpaceModal from "@/components/ShareSpaceModal";
 import './SpaceDetail.css';
 import { Button } from "@/components/ui/button";
 import EditSpaceModal from "@/components/EditSpaceModal";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { useSpacePermission } from "@/state/useSpacePermission";
 import EditableTitle from "@/components/EditableTitle";
 import { useEntityUpdate } from "@/hooks/useEntityUpdate";
@@ -33,6 +35,8 @@ const SpaceDetail: React.FC = () => {
   const fetchBoxes = useBoxesStore((state) => state.fetchBoxes);
 
   const createBoxButtonRef = React.useRef<HTMLButtonElement>(null);
+  const removeSpace = useSpacesStore(state => state.removeSpace);
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [showLabelSheet, setShowLabelSheet] = React.useState(false);
 
   const openCreateBox = () => setCreateBoxOpen(true);
@@ -85,9 +89,46 @@ const SpaceDetail: React.FC = () => {
           className="flex-1"
         />
         {permission.canEdit && (
-          <Button variant="outline" onClick={() => setEditOpen(true)} aria-label="Edit space">
-            Edit Space
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => setEditOpen(true)} aria-label="Edit space">
+              Edit Space
+            </Button>
+            {permission.isOwner && (
+              <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    aria-label="Delete space"
+                    disabled={boxes.some(b => b.space_id === space.id)}
+                    title={boxes.some(b => b.space_id === space.id) ? "Remove or move all boxes before deleting the space" : undefined}
+                  >
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this space?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently remove the space and its metadata. You can only delete a space that has no boxes.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className={buttonVariants({ variant: "destructive" })}
+                      onClick={async () => {
+                        if (!spaceId) return;
+                        await removeSpace(spaceId);
+                        navigate('/spaces');
+                      }}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         )}
       </div>
       <div className="mb-2 text-muted-foreground">Location: {space.location}</div>
