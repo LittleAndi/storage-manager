@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useSpacesStore } from "@/state/spacesStore";
 import { resolveImageUrl, getCachedImageUrl } from "@/lib/imageUrls";
+import ImagePlaceholder from "@/components/ImagePlaceholder";
 import { useBoxesStore } from "@/state/boxesStore";
 import { useNavigate } from "react-router-dom";
 
@@ -40,6 +41,8 @@ const SpaceDetail: React.FC = () => {
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [showLabelSheet, setShowLabelSheet] = React.useState(false);
   const [lightboxOpen, setLightboxOpen] = React.useState(false);
+  const [spaceImageUrl, setSpaceImageUrl] = React.useState<string | null>(() => (space?.image_id ? (getCachedImageUrl(space.image_id) || null) : null));
+  const [spaceImgLoading, setSpaceImgLoading] = React.useState(false);
 
   const openCreateBox = () => setCreateBoxOpen(true);
   const closeCreateBox = () => setCreateBoxOpen(false);
@@ -53,11 +56,24 @@ const SpaceDetail: React.FC = () => {
     if (spaceId) fetchBoxes(spaceId);
   }, [spaces, spaceId, fetchSpaces, fetchBoxes]);
 
-  // If we don't have a resolved URL for this space but the space has an image_id,
-  // try to fetch a signed URL and persist it in the store so the detail view shows it.
+  // Resolve space image (mirrors BoxDetail logic) and update local state
   React.useEffect(() => {
-    if (!space?.image_id) return;
-    resolveImageUrl(space.image_id);
+    let cancelled = false;
+    if (!space?.image_id) {
+      setSpaceImageUrl(null);
+      return;
+    }
+    const cached = getCachedImageUrl(space.image_id);
+    if (cached) {
+      setSpaceImageUrl(cached);
+      return;
+    }
+    setSpaceImgLoading(true);
+    resolveImageUrl(space.image_id)
+      .then(url => { if (!cancelled) setSpaceImageUrl(url); })
+      .catch(() => { if (!cancelled) setSpaceImageUrl(null); })
+      .finally(() => { if (!cancelled) setSpaceImgLoading(false); });
+    return () => { cancelled = true; };
   }, [space?.image_id]);
 
   const permission = useSpacePermission(spaceId || "");
@@ -138,35 +154,39 @@ const SpaceDetail: React.FC = () => {
         <h2 className="text-sm font-semibold text-muted-foreground mb-1">Members</h2>
         <MemberList spaceId={space.id} />
       </div>
-      {space.image_id && getCachedImageUrl(space.image_id) && (
-        <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-          <DialogTrigger asChild>
-            <button
-              type="button"
-              onClick={() => setLightboxOpen(true)}
-              className="group relative w-32 h-32 rounded mb-4 border bg-white cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
+      {space.image_id && (
+        spaceImageUrl ? (
+          <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setLightboxOpen(true)}
+                className="group relative w-32 h-32 rounded mb-4 border bg-white cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <img
+                  src={spaceImageUrl}
+                  alt={`${space.name} image`}
+                  className="w-full h-full object-contain"
+                />
+                <span className="absolute inset-0 hidden items-center justify-center bg-black/40 text-white text-[10px] font-medium group-hover:flex">Click to enlarge</span>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="p-2 bg-background/95 backdrop-blur max-w-[min(95vw,1100px)] max-h-[95svh] flex flex-col items-center justify-center">
+              <DialogTitle className="sr-only">{space.name} image</DialogTitle>
+              <DialogDescription className="sr-only">Full size preview of the space image. Press Escape or the close button to exit.</DialogDescription>
+              <DialogClose aria-label="Close" className="right-2 top-2">
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+              </DialogClose>
               <img
-                src={getCachedImageUrl(space.image_id)!}
-                alt={`${space.name} image`}
-                className="w-full h-full object-contain"
+                src={spaceImageUrl}
+                alt={`${space.name} full size image`}
+                className="max-h-[90svh] max-w-full object-contain rounded shadow-md"
               />
-              <span className="absolute inset-0 hidden items-center justify-center bg-black/40 text-white text-[10px] font-medium group-hover:flex">Click to enlarge</span>
-            </button>
-          </DialogTrigger>
-          <DialogContent className="p-2 bg-background/95 backdrop-blur max-w-[min(95vw,1100px)] max-h-[95svh] flex flex-col items-center justify-center">
-            <DialogTitle className="sr-only">{space.name} image</DialogTitle>
-            <DialogDescription className="sr-only">Full size preview of the space image. Press Escape or the close button to exit.</DialogDescription>
-            <DialogClose aria-label="Close" className="right-2 top-2">
-              <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
-            </DialogClose>
-            <img
-              src={getCachedImageUrl(space.image_id)!}
-              alt={`${space.name} full size image`}
-              className="max-h-[90svh] max-w-full object-contain rounded shadow-md"
-            />
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        ) : (
+          <ImagePlaceholder className="w-32 h-32 rounded mb-4" loading={spaceImgLoading} />
+        )
       )}
       <div className="mb-4 flex gap-2 flex-wrap">
         <Button
