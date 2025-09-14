@@ -18,7 +18,7 @@ export function dbSpaceToAppSpace(
     location: db.location ?? undefined,
     owner_id: db.owner_id,
     owner: db.owner ?? undefined,
-    thumbnail_url: db.thumbnail_url ?? undefined,
+    image_id: db.image_id ?? undefined,
     created_at: db.created_at,
     modified_at: db.modified_at,
   };
@@ -33,7 +33,7 @@ export function appSpaceToDbSpace(
     location: space.location ?? null,
     owner_id: space.owner_id,
     // owner is set by the database, do not send from app
-    thumbnail_url: space.thumbnail_url ?? null,
+    image_id: space.image_id ?? null,
     created_at: space.created_at,
     modified_at: space.modified_at,
   };
@@ -49,7 +49,7 @@ export function newSpaceToDbSpace(
     location: space.location ?? null,
     owner_id: space.owner_id,
     // owner is set by the database, do not send from app
-    thumbnail_url: space.thumbnail_url ?? null,
+    image_id: space.image_id ?? null,
     created_at: now,
     modified_at: now,
     // id are not included for insert
@@ -65,7 +65,7 @@ export function dbBoxToAppBox(
     space_id: db.space_id,
     name: db.name,
     location: db.location ?? undefined,
-    thumbnail_url: db.thumbnail_url ?? undefined,
+    image_id: db.image_id ?? undefined,
     created_at: db.created_at,
     modified_at: db.modified_at,
     content: db.content,
@@ -80,7 +80,7 @@ export function appBoxToDbBox(
     space_id: box.space_id,
     name: box.name,
     location: box.location ?? null,
-    thumbnail_url: box.thumbnail_url ?? null,
+    image_id: box.image_id ?? null,
     created_at: box.created_at,
     modified_at: box.modified_at,
     content: box.content,
@@ -95,7 +95,7 @@ export function newBoxToDbBox(
     space_id: box.space_id,
     name: box.name,
     location: box.location ?? null,
-    thumbnail_url: box.thumbnail_url ?? null,
+    image_id: box.image_id ?? null,
     created_at: now,
     modified_at: now,
     content: box.content,

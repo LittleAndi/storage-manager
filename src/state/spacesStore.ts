@@ -9,9 +9,12 @@ interface SpacesState {
   spaces: Space[];
   loading: boolean;
   error: string | null;
+  /** map of spaceId -> resolved signed image URL */
+  imageUrls: Record<string, string>;
   membershipRoles: Record<string, string>;
   membershipCounts: Record<string, number>;
   fetchSpaces: () => Promise<void>;
+  setSpaceImageUrl: (spaceId: string, url: string) => void;
   addSpace: (space: NewSpace) => Promise<string | null>;
   updateSpace: (space: Space) => void;
   removeSpace: (id: string) => void;
@@ -32,6 +35,7 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
   spaces: [],
   loading: false,
   error: null,
+  imageUrls: {},
   membershipRoles: {},
   membershipCounts: {},
   membersBySpace: {},
@@ -49,14 +53,16 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
         return;
       }
       // Map spaces and attach boxCount
-      const spaces: Space[] = (data || []).map((
-        space: Database["public"]["Tables"]["spaces"]["Row"] & {
-          boxes?: { count: number }[];
-        },
-      ) => ({
-        ...dbSpaceToAppSpace(space),
-        boxCount: space.boxes?.[0]?.count ?? 0,
-      }));
+      const spaces: Space[] = (data || []).map(
+        (
+          space: Database["public"]["Tables"]["spaces"]["Row"] & {
+            boxes?: { count: number }[];
+          },
+        ) => ({
+          ...dbSpaceToAppSpace(space),
+          boxCount: space.boxes?.[0]?.count ?? 0,
+        }),
+      );
 
       // Membership roles/counts logic unchanged
       const membershipRoles: Record<string, string> = {};
@@ -80,7 +86,19 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
         // ignore
       }
 
-      set({ spaces, membershipRoles, membershipCounts, loading: false });
+      // Rehydrate any persisted imageUrls
+      const savedImageUrlsRaw = localStorage.getItem("spaceImageUrls");
+      const savedImageUrls: Record<string, string> = savedImageUrlsRaw
+        ? JSON.parse(savedImageUrlsRaw)
+        : {};
+
+      set({
+        spaces,
+        membershipRoles,
+        membershipCounts,
+        loading: false,
+        imageUrls: savedImageUrls,
+      });
       localStorage.setItem("spaces", JSON.stringify(spaces));
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
@@ -93,7 +111,9 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
     const now = new Date(Date.now()).toISOString();
     // Use mapper for NewSpace to DB Insert type
     const dbInsert = newSpaceToDbSpace(space, now);
-    const { data, error } = await supabase.from("spaces").insert(dbInsert)
+    const { data, error } = await supabase
+      .from("spaces")
+      .insert(dbInsert)
       .select();
     if (error || !data || !data[0]?.id) {
       set({ error: error?.message || "Failed to create space" });
@@ -111,6 +131,20 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
     localStorage.setItem("spaces", JSON.stringify(updated));
     return data[0].id;
   },
+  setSpaceImageUrl: (spaceId: string, url: string) => {
+    // update in-memory map and persist
+    set((state) => {
+      const imageUrls = { ...(state.imageUrls || {}), [spaceId]: url };
+      const spaces = state.spaces.map((s) => s.id === spaceId ? { ...s } : s);
+      try {
+        localStorage.setItem("spaceImageUrls", JSON.stringify(imageUrls));
+        localStorage.setItem("spaces", JSON.stringify(spaces));
+      } catch {
+        // ignore storage errors
+      }
+      return { imageUrls, spaces } as Partial<SpacesState>;
+    });
+  },
   updateSpace: (space) =>
     set({
       spaces: get().spaces.map((s) =>
@@ -120,17 +154,63 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
       ),
     }),
   removeSpace: async (id) => {
-    // Remove from Supabase database
-    const { error } = await supabase.from("spaces").delete().eq("id", id);
-    if (error) {
-      set({ error: error.message });
-      console.error(error.message);
+    const target = get().spaces.find((s) => s.id === id);
+    const imageId = target?.image_id;
+    // 1. Remove space members first to avoid FK or policy issues when deleting shared spaces
+    const { error: memberError } = await supabase
+      .from("space_members")
+      .delete()
+      .eq("space_id", id);
+    if (memberError) {
+      set({ error: memberError.message });
+      console.error("Failed to delete space members:", memberError.message);
+      return; // abort deletion if we cannot remove members
+    }
+
+    // 2. Delete the space itself
+    const { error: spaceError } = await supabase.from("spaces").delete().eq(
+      "id",
+      id,
+    );
+    if (spaceError) {
+      set({ error: spaceError.message });
+      console.error(spaceError.message);
       return;
     }
-    // Remove from local state and localStorage
+
+    // 3. Update local state and cached maps
     const updated = get().spaces.filter((s) => s.id !== id);
-    set({ spaces: updated });
-    localStorage.setItem("spaces", JSON.stringify(updated));
+    set((state) => {
+      const { membershipCounts, membershipRoles, membersBySpace, imageUrls } =
+        state;
+      const newMembershipCounts = { ...membershipCounts };
+      const newMembershipRoles = { ...membershipRoles };
+      const newMembersBySpace = { ...membersBySpace };
+      const newImageUrls = { ...imageUrls };
+      delete newMembershipCounts[id];
+      delete newMembershipRoles[id];
+      delete newMembersBySpace[id];
+      delete newImageUrls[id];
+      try {
+        localStorage.setItem("spaces", JSON.stringify(updated));
+        localStorage.setItem("spaceImageUrls", JSON.stringify(newImageUrls));
+      } catch {
+        // ignore storage failures
+      }
+      return {
+        spaces: updated,
+        membershipCounts: newMembershipCounts,
+        membershipRoles: newMembershipRoles,
+        membersBySpace: newMembersBySpace,
+        imageUrls: newImageUrls,
+      } as Partial<SpacesState>;
+    });
+    if (imageId) {
+      fetch(`/api/images/${imageId}`, { method: "DELETE" }).catch((e) => {
+        console.warn("Failed deleting image for space", imageId, e);
+      });
+    }
+    // NOTE: If boxes are not cascading in DB, you may need a backend function to cascade delete boxes & their images.
   },
   fetchSpaceMembers: async (spaceId: string) => {
     const { memberLoading } = get();
@@ -139,8 +219,9 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
       memberLoading: { ...state.memberLoading, [spaceId]: true },
       memberErrors: { ...state.memberErrors, [spaceId]: null },
     }));
-    const { data, error } = await supabase
-      .rpc("get_space_members", { p_space: spaceId });
+    const { data, error } = await supabase.rpc("get_space_members", {
+      p_space: spaceId,
+    });
     if (error) {
       set((state) => ({
         memberLoading: { ...state.memberLoading, [spaceId]: false },

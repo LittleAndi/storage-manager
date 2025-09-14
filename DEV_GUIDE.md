@@ -5,6 +5,8 @@
 1. [Supabase Integration](#supabase-integration)
 2. [React + TypeScript + Vite](#react--typescript--vite)
 3. [ESLint Configuration](#eslint-configuration)
+4. [Image Handling Architecture](#image-handling-architecture)
+5. [Testing Strategy](#testing-strategy)
 
 ---
 
@@ -73,6 +75,57 @@ export default tseslint.config([
   },
 ]);
 ```
+
+---
+
+## 4. Image Handling Architecture
+
+The application provides a unified image pipeline for Spaces and Boxes using an `image_id` field stored in the database instead of embedding direct URLs.
+
+### Flow Summary
+
+1. User selects file -> `uploadImage` sends `POST /api/images/{uuid}` (multipart) -> returns `{ image_id, preview_url? }`.
+2. If the parent entity (space/box) already exists, `uploadAndMaybeConfirm` immediately calls `confirmImage` with metadata (`space_id` or `box_id`). Otherwise confirmation is deferred until creation.
+3. Display components call `resolveImageUrl(imageId)` which internally batches through `getImageUrls` and caches results.
+4. Lazy loading is driven by `IntersectionObserver` in `BoxCard` and `SpaceCard` to avoid upfront resolution of offscreen images.
+
+### Key Files
+
+- `src/lib/imageUpload.ts` – low-level API calls: `uploadImage`, `confirmImage`, `getImageUrls` (batch).
+- `src/lib/imageUrls.ts` – higher-level single-id + batch cache, in‑flight promise coalescing, prefetch helper.
+- `src/components/forms/ImageUploadField.tsx` – reusable upload/preview/clear UI component.
+- `src/hooks/useEntityUpdate.ts` – normalizes `image_id: null` to `undefined` in local state after clearing.
+
+### Clearing Images
+
+Setting the form field to empty triggers a patch with `image_id: null`. The hook ensures local entity objects drop the field so UI reverts cleanly.
+
+### Caching Model
+
+| Layer | Purpose | Scope |
+|-------|---------|-------|
+| In-memory map (`imageUrls.ts`) | Fast repeat access | Session |
+| In-flight map | Prevent duplicate network calls for same id(s) | Request window |
+| Zustand store `imageUrls` maps | Rehydrate between navigations (lightweight) | Session/localStorage |
+
+### Error / Edge Handling
+
+- Batch resolver returning `null` -> id omitted from final map.
+- Upload failure -> user sees inline error; no state mutation occurs.
+- Confirm failure is non-blocking for creation (logged / toast).
+
+---
+
+## 5. Testing Strategy
+
+Image logic is tested at multiple layers:
+
+- Unit: `imageUpload.test.ts` & `imageUrls.test.ts` validate API wrapper behavior, caching, dedupe, and error fallbacks.
+- Integration: `imageFlow.test.ts` simulates combined upload + confirm + batch URL mapping.
+- Integration: `imageClear.test.tsx` ensures nulling an image propagates correctly.
+
+When extending the image system (e.g., adding drag & drop or alt text editing), prefer adding a new focused test file alongside existing ones.
+
 
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 

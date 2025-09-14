@@ -9,9 +9,8 @@ export const boxFormSchema = z.object({
     content: z.string().max(5000, "Content too long").optional().or(
         z.literal(""),
     ),
-    thumbnail_url: z.string().url("Must be a valid URL").optional().or(
-        z.literal(""),
-    ),
+    // Optional image id for uploaded image (persisted instead of full URL)
+    image_id: z.string().optional().or(z.literal("")),
 });
 
 export type BoxFormValues = z.infer<typeof boxFormSchema>;

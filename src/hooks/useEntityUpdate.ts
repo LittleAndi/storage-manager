@@ -34,7 +34,16 @@ export function useEntityUpdate<TPatch extends Record<string, unknown>>(
                     dbPatch,
                 ).eq("id", entity.id);
                 if (err) throw err;
-                const updated: Space = { ...(entity as Space), ...patch };
+                const updatedBase: Space = {
+                    ...(entity as Space),
+                    ...patch,
+                } as Space;
+                // If image_id explicitly null, remove from local object
+                const updated: Space =
+                    (Object.prototype.hasOwnProperty.call(patch, "image_id") &&
+                            (patch as { image_id?: unknown }).image_id === null)
+                        ? { ...updatedBase, image_id: undefined }
+                        : updatedBase;
                 updateSpace(updated);
                 onSuccess?.(updated);
             } else {
@@ -42,7 +51,15 @@ export function useEntityUpdate<TPatch extends Record<string, unknown>>(
                     dbPatch,
                 ).eq("id", entity.id);
                 if (err) throw err;
-                const updated: Box = { ...(entity as Box), ...patch };
+                const updatedBase: Box = {
+                    ...(entity as Box),
+                    ...patch,
+                } as Box;
+                const updated: Box =
+                    (Object.prototype.hasOwnProperty.call(patch, "image_id") &&
+                            (patch as { image_id?: unknown }).image_id === null)
+                        ? { ...updatedBase, image_id: undefined }
+                        : updatedBase;
                 updateBox(updated);
                 onSuccess?.(updated);
             }

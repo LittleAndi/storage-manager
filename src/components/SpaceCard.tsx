@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useSpacesStore } from "@/state/spacesStore";
 import { Button } from "@/components/ui/button";
 import { TrashIcon } from "@/components/ui/trash-icon";
 import { toast } from "sonner";
+import { resolveImageUrl, getCachedImageUrl } from "@/lib/imageUrls";
 
 export interface SpaceCardProps {
   id: string;
@@ -12,8 +14,10 @@ export interface SpaceCardProps {
   memberCount?: number;
   boxCount?: number;
   owner?: string | null;
-  /** camelCase variant (internal UI prop) */
+  /** Optional signed URL already known (e.g., recently uploaded) */
   thumbnailUrl?: string;
+  /** optional persisted image id (UUID) for server-side stored thumbnails */
+  imageId?: string | null;
   onOpen?: () => void;
   /** Indicates space is not owned by current user */
   isShared?: boolean;
@@ -25,24 +29,50 @@ export interface SpaceCardProps {
   onDelete?: () => void;
 }
 
-const SpaceCard: React.FC<SpaceCardProps> = ({
-  name,
-  location,
-  memberCount,
-  boxCount,
-  owner,
-  thumbnailUrl,
-  onOpen,
-  isShared,
-  ownerName,
-  role,
-  onDelete,
-}) => {
-  const thumb = thumbnailUrl; // unified camelCase
+const SpaceCard: React.FC<SpaceCardProps> = ({ name, location, memberCount, boxCount, owner, thumbnailUrl, imageId, onOpen, isShared, ownerName, role, onDelete }) => {
   const canDelete = (boxCount ?? 0) === 0;
+  const setSpaceImageUrl = useSpacesStore((s) => s.setSpaceImageUrl);
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+  const [erroredThumb, setErroredThumb] = useState(false);
+  const [resolvedUrl, setResolvedUrl] = useState<string | undefined>(() => (imageId ? getCachedImageUrl(imageId) || undefined : undefined));
+
+  // Observe visibility for lazy load (skip if thumbnailUrl already provided)
+  useEffect(() => {
+    if (!imageId || thumbnailUrl) return;
+    if (resolvedUrl) return;
+    const node = ref.current;
+    if (!node) return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((e) => e.isIntersecting && setVisible(true));
+    }, { rootMargin: "200px" });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [imageId, thumbnailUrl, resolvedUrl]);
+
+  // Resolve when visible
+  useEffect(() => {
+    if (!imageId || resolvedUrl || thumbnailUrl) return;
+    if (!visible) return;
+  let cancelled = false;
+    setErroredThumb(false);
+    resolveImageUrl(imageId)
+      .then((u) => {
+        if (!cancelled && u) {
+          setResolvedUrl(u);
+          try { setSpaceImageUrl(imageId, u); } catch { /* ignore */ }
+        }
+      })
+      .catch(() => { if (!cancelled) setErroredThumb(true); })
+  .finally(() => { /* no-op */ });
+    return () => { cancelled = true; };
+  }, [visible, imageId, resolvedUrl, thumbnailUrl, setSpaceImageUrl]);
+
+  const finalUrl = thumbnailUrl || resolvedUrl;
 
   return (
     <div
+  ref={ref}
       className={`relative group bg-white rounded shadow p-4 flex items-center cursor-pointer transition-colors ${
         isShared ? "bg-indigo-50 dark:bg-indigo-900/20" : "bg-background hover:bg-accent/50"
       }`}
@@ -80,10 +110,20 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
           </button>
         )
       )}
-      {thumb && (
+      {/* Render resolved image when available and not errored, otherwise show placeholder (150x150). */}
+      {finalUrl && !erroredThumb ? (
         <img
-          src={thumb}
-          alt={name}
+          src={finalUrl}
+          alt={`${name} image`}
+          className="w-16 h-16 rounded object-cover mr-4 border"
+          loading="lazy"
+          onError={() => setErroredThumb(true)}
+        />
+      ) : (
+        <img
+          src={`data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><rect width='100%25' height='100%25' fill='%23e5e7eb'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-family='Arial, Helvetica, sans-serif' font-size='18'>No image</text></svg>`}
+          alt=""
+          aria-hidden="true"
           className="w-16 h-16 rounded object-cover mr-4 border"
           loading="lazy"
         />

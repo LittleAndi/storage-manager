@@ -19,31 +19,31 @@ export type Database = {
           content: string | null
           created_at: string | null
           id: string
+          image_id: string | null
           location: string | null
           modified_at: string | null
           name: string
           space_id: string
-          thumbnail_url: string | null
         }
         Insert: {
           content?: string | null
           created_at?: string | null
           id?: string
+          image_id?: string | null
           location?: string | null
           modified_at?: string | null
           name: string
           space_id: string
-          thumbnail_url?: string | null
         }
         Update: {
           content?: string | null
           created_at?: string | null
           id?: string
+          image_id?: string | null
           location?: string | null
           modified_at?: string | null
           name?: string
           space_id?: string
-          thumbnail_url?: string | null
         }
         Relationships: [
           {
@@ -132,32 +132,32 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          image_id: string | null
           location: string | null
           modified_at: string | null
           name: string
           owner: string | null
           owner_id: string
-          thumbnail_url: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          image_id?: string | null
           location?: string | null
           modified_at?: string | null
           name: string
           owner?: string | null
           owner_id?: string
-          thumbnail_url?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          image_id?: string | null
           location?: string | null
           modified_at?: string | null
           name?: string
           owner?: string | null
           owner_id?: string
-          thumbnail_url?: string | null
         }
         Relationships: []
       }
@@ -175,6 +175,10 @@ export type Database = {
         Returns: boolean
       }
       can_edit_boxes: {
+        Args: { p_space_id: string }
+        Returns: boolean
+      }
+      can_edit_spaces: {
         Args: { p_space_id: string }
         Returns: boolean
       }

@@ -40,14 +40,19 @@ export const MemberList: React.FC<MemberListProps> = ({ spaceId }) => {
     <ul className="mt-1 space-y-2">
       {members.map((m) => (
         <li key={m.user_id} className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
+          <div
+            className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium"
+            aria-label={m.display_name || m.user_id}
+          >
             {m.avatar_url ? (
               <img
                 src={m.avatar_url}
-                alt={m.display_name || "User"}
+                alt={`${m.display_name || 'User'} avatar`}
                 className="w-8 h-8 rounded-full object-cover"
               />
-            ) : (m.display_name || m.user_id).slice(0, 2).toUpperCase()}
+            ) : (
+              (m.display_name || m.user_id).slice(0, 2).toUpperCase()
+            )}
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-sm font-medium leading-none truncate">

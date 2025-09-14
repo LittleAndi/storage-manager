@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { ImageUploadField } from "@/components/forms/ImageUploadField";
 import {
   Form,
   FormField,
@@ -22,22 +23,41 @@ import { useNavigate } from "react-router-dom";
 import { spaceFormSchema, type SpaceFormValues } from "@/schemas/spaceSchema";
 
 const CreateSpace: React.FC = () => {
-  const form = useForm<SpaceFormValues>({ resolver: zodResolver(spaceFormSchema), defaultValues: { name: "", location: "", thumbnail_url: "" } });
+  const form = useForm<SpaceFormValues>({ resolver: zodResolver(spaceFormSchema), defaultValues: { name: "", location: "", image_id: "" } });
   const { handleSubmit, formState: { isSubmitting }, reset } = form;
   const navigate = useNavigate();
   const addSpace = useSpacesStore(state => state.addSpace);
-
+  const [imageUploading, setImageUploading] = React.useState(false);
   const onSubmit = async (data: SpaceFormValues) => {
     // Save to local state and Supabase
     const owner_id = useAuthStore.getState().user!.id;
     const newSpace: NewSpace = {
       name: data.name,
       location: data.location,
-      thumbnail_url: data.thumbnail_url,
+      // Persist the image id (if uploaded) instead of the full URL
+      image_id: data.image_id || undefined,
       owner_id,
     };
     const id = await addSpace(newSpace);
     if (id) {
+      // If an image was uploaded, confirm it by adding metadata linking it to this space
+      if (data.image_id) {
+        try {
+          // Confirm image by updating metadata on the image resource
+          const confirmResp = await fetch(`/api/images/${encodeURIComponent(data.image_id)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ metadata_key: "space_id", metadata_value: id }),
+          });
+          if (!confirmResp.ok) {
+            console.error("Failed to confirm image", await confirmResp.text());
+            toast.error("Image confirmation failed (metadata). The space was created though.");
+          }
+        } catch (err) {
+          console.error("Error confirming image:", err);
+          toast.error("Image confirmation failed (network). The space was created though.");
+        }
+      }
       toast.success("Space created successfully!");
       reset();
       navigate(`/spaces/${id}`);
@@ -45,6 +65,8 @@ const CreateSpace: React.FC = () => {
       toast.error("Failed to create space.");
     }
   };
+
+  // Removed inline upload logic in favor of shared ImageUploadField
 
   return (
     <AppShell>
@@ -80,19 +102,24 @@ const CreateSpace: React.FC = () => {
                   </FormItem>
                 )}
               />
-              {/* Thumbnail URL input (simple) */}
-              <FormField name="thumbnail_url" render={({ field }) => (
-                <FormItem>
-                  <FormLabel htmlFor="thumbnail_url">Thumbnail URL (optional)</FormLabel>
-                  <FormControl>
-                    <Input id="thumbnail_url" type="text" placeholder="https://..." {...field} />
-                  </FormControl>
-                </FormItem>
-              )} />
+              <FormItem>
+                <ImageUploadField
+                  name="space_image_upload"
+                  label="Space Image (optional)"
+                  description="Upload an optional image for this space."
+                  variant="simple"
+                  onUploadingChange={(u) => setImageUploading(u)}
+                  onUploaded={(r) => {
+                    form.setValue("image_id", r.imageId, { shouldDirty: true, shouldTouch: true });
+                    toast.success("Image uploaded");
+                  }}
+                />
+              </FormItem>
             </CardContent>
+            <div className="h-4" />
             <CardFooter>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create Space"}
+              <Button type="submit" className="w-full" disabled={isSubmitting || imageUploading} aria-busy={isSubmitting || imageUploading}>
+                {imageUploading ? "Waiting for image..." : isSubmitting ? "Creating..." : "Create Space"}
               </Button>
             </CardFooter>
           </form>

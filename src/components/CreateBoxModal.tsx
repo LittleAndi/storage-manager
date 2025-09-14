@@ -1,15 +1,10 @@
 import React from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { boxFormSchema, type BoxFormValues } from "@/schemas/boxSchema";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { useBoxesStore } from "@/state/boxesStore";
+import type { BoxFormValues } from "@/schemas/boxSchema";
 import type { NewBox } from "@/types/entities";
 import { useNavigate, useParams } from "react-router-dom";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogDescription } from "@/components/ui/alert-dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from "@/components/ui/alert-dialog";
+import { BoxForm } from "./BoxForm";
 
 interface CreateBoxModalProps {
   open: boolean;
@@ -18,10 +13,6 @@ interface CreateBoxModalProps {
 }
 
 const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate }) => {
-  const form = useForm<BoxFormValues>({
-    resolver: zodResolver(boxFormSchema),
-    defaultValues: { name: "", location: "", content: "", thumbnail_url: "" },
-  });
   const { spaceId } = useParams();
   const navigate = useNavigate();
   const addBox = useBoxesStore((state) => state.addBox);
@@ -33,10 +24,10 @@ const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate
       location: values.location,
       space_id: spaceId,
       content: values.content,
+      image_id: values.image_id || undefined,
     };
     await addBox(newBox);
     if (onCreate) onCreate(values);
-    form.reset();
     onClose();
   };
 
@@ -50,49 +41,18 @@ const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate
 
   return (
     <AlertDialog open={open} onOpenChange={handleClose}>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-h-[90svh] sm:max-h-[85vh] overflow-hidden flex flex-col">
         <AlertDialogHeader>
           <AlertDialogTitle>Create New Box</AlertDialogTitle>
           <AlertDialogDescription />
         </AlertDialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
-            <FormField name="name" render={({ field }) => (
-              <FormItem>
-                <FormLabel htmlFor="box-name">Box Name</FormLabel>
-                <FormControl>
-                  <Input id="box-name" placeholder="Enter box name" {...field} autoFocus />
-                </FormControl>
-                <FormDescription>Required. Give your box a descriptive name.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField name="location" render={({ field }) => (
-              <FormItem>
-                <FormLabel htmlFor="box-location">Location</FormLabel>
-                <FormControl>
-                  <Input id="box-location" placeholder="Enter location (optional)" {...field} />
-                </FormControl>
-                <FormDescription>Optional. Where is this box stored?</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField name="content" render={({ field }) => (
-              <FormItem>
-                <FormLabel htmlFor="box-content">Content</FormLabel>
-                <FormControl>
-                  <Textarea id="box-content" placeholder="Enter box content (optional)" {...field} rows={5} />
-                </FormControl>
-                <FormDescription>Optional. What does this box contain?</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <AlertDialogFooter>
-              <Button type="submit">Create</Button>
-              <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
-            </AlertDialogFooter>
-          </form>
-        </Form>
+        <BoxForm
+          mode="create"
+          open={open}
+            /* initialValues empty by design for create */
+          onSubmit={handleSubmit}
+          onCancel={handleClose}
+        />
       </AlertDialogContent>
     </AlertDialog>
   );

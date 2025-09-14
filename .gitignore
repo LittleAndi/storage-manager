@@ -30,7 +30,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # IDE
-.vscode/
+
 node_modules
 .idea/
 *.swp

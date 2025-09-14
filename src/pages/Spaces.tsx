@@ -1,9 +1,11 @@
 import React from "react";
 import AppShell from "../components/AppShell";
 import { SpacesSection } from "../components/SpacesSection";
+import { resolveImageUrl, getCachedImageUrl } from "@/lib/imageUrls";
 import { useSpacesStore } from "@/state/spacesStore";
 import { useAuthStore } from "@/state/authStore";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
@@ -18,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 
 const Spaces: React.FC = () => {
   const spaces = useSpacesStore((state) => state.spaces);
+  const loading = useSpacesStore((state) => state.loading);
   const membershipRoles = useSpacesStore((state) => state.membershipRoles);
   const fetchSpaces = useSpacesStore((state) => state.fetchSpaces);
   const removeSpace = useSpacesStore((state) => state.removeSpace);
@@ -35,10 +38,15 @@ const Spaces: React.FC = () => {
   const filteredSpaces = locationFilter !== ALL_LOCATIONS
   ? spaces.filter((s) => s.location === locationFilter)
   : spaces;
+
+  // Kick off resolution of image URLs for visible spaces (debounced by cache/inflight)
+  React.useEffect(() => {
+    const ids = filteredSpaces.map(s => s.image_id).filter(Boolean) as string[];
+    ids.forEach(id => resolveImageUrl(id));
+  }, [filteredSpaces]);
   
-  // Loading state: spaces is undefined/null before fetchSpaces resolves
-  // If spaces is undefined/null, or if a loading flag is set, show loading
-  const isLoading = !Array.isArray(spaces) || (Array.isArray(spaces) && spaces.length === 0 && !deletingId && !locations.length);
+  // Use store loading flag. After loading completes, if there are no spaces show empty state.
+  const isLoading = loading;
 
   const { ownedSpaces, sharedSpaces } = React.useMemo(() => {
     const owned: typeof spaces = [];
@@ -88,8 +96,10 @@ const Spaces: React.FC = () => {
       <div className="flex flex-col gap-6">
         {isLoading ? (
           <Spinner size={24} label="Loading spaces..." className="py-8" />
+        ) : Array.isArray(spaces) && spaces.length === 0 ? (
+          <div className="text-muted-foreground py-8">No spaces.</div>
         ) : Array.isArray(spaces) && filteredSpaces.length === 0 ? (
-          <div className="text-muted-foreground">No spaces found.</div>
+          <div className="text-muted-foreground py-8">No spaces match the selected filters.</div>
         ) : (
           <>
       <SpacesSection
@@ -101,7 +111,8 @@ const Spaces: React.FC = () => {
           memberCount: (membershipCounts[s.id] || 0) + 1, // include owner
           boxCount: s.boxCount,
           owner: s.owner || undefined,
-          thumbnailUrl: s.thumbnail_url,
+          thumbnailUrl: getCachedImageUrl(s.image_id) || undefined,
+          imageId: s.image_id ?? undefined,
           isShared: false,
           onOpen: () => navigate(`/spaces/${s.id}`),
           // Only allow delete if no boxes
@@ -117,7 +128,8 @@ const Spaces: React.FC = () => {
           memberCount: (membershipCounts[s.id] || 0) + (s.owner_id ? 1 : 0),
           boxCount: s.boxCount,
           owner: s.owner || undefined,
-          thumbnailUrl: s.thumbnail_url,
+          thumbnailUrl: getCachedImageUrl(s.image_id) || undefined,
+          imageId: s.image_id ?? undefined,
           isShared: true,
           ownerName: s.owner || undefined,
           role: membershipRoles[s.id],
