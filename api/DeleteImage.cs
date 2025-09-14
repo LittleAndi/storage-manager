@@ -4,13 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
-public class DeleteImage
+public class DeleteImage(ILogger<DeleteImage> log)
 {
-    private readonly ILogger<DeleteImage> _log;
-    public DeleteImage(ILogger<DeleteImage> log)
-    {
-        _log = log;
-    }
+    private readonly ILogger<DeleteImage> _log = log;
 
     [Function("DeleteImage")]
     public async Task<IActionResult> Run(

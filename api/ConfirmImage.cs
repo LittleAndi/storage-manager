@@ -5,14 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
-public class ConfirmImage
+public class ConfirmImage(ILogger<ConfirmImage> log)
 {
-    private readonly ILogger<ConfirmImage> log;
+    private readonly ILogger<ConfirmImage> log = log;
 
-    public ConfirmImage(ILogger<ConfirmImage> log)
-    {
-        this.log = log;
-    }
     // Record matching the expected JSON payload posted to this function (metadata only)
     public record ConfirmImageRequest(string metadata_key, string metadata_value);
 

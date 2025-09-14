@@ -5,14 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
-public class GetImageUrls
+public class GetImageUrls(ILogger<GetImageUrls> log)
 {
-    private readonly ILogger<GetImageUrls> log;
-
-    public GetImageUrls(ILogger<GetImageUrls> log)
-    {
-        this.log = log;
-    }
+    private readonly ILogger<GetImageUrls> log = log;
 
     [Function("GetImageUrls")]
     public async Task<IActionResult> Run(

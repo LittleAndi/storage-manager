@@ -1,21 +1,18 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Sas;
+using Azure.Storage.Blobs.Models; // added for BlobHttpHeaders
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Webp;
 
-public class UploadImage
+public class UploadImage(ILogger<UploadImage> log)
 {
-    private readonly ILogger<UploadImage> log;
-
-    public UploadImage(ILogger<UploadImage> log)
-    {
-        this.log = log;
-    }
+    private readonly ILogger<UploadImage> log = log;
 
     [Function("UploadImage")]
     public async Task<IActionResult> Run(
@@ -23,19 +20,14 @@ public class UploadImage
         string imageId
         )
     {
-        // Extract fields from multipart form
         var form = await req.ReadFormAsync();
-
         var file = form.Files["file"];
         if (file == null || file.Length == 0)
         {
             return new BadRequestObjectResult(new { error = "file is required" });
         }
 
-        // Use the original extension (fallback: .jpg)
-        string? extension = Path.GetExtension(file.FileName)?.ToLower();
-        if (string.IsNullOrEmpty(extension)) extension = ".jpg";
-
+        string? suppliedExtension = Path.GetExtension(file.FileName)?.ToLowerInvariant();
         string containerName = Environment.GetEnvironmentVariable("BLOB_CONTAINER_NAME") ?? "images";
         string? connectionString = Environment.GetEnvironmentVariable("StorageAccountConnectionString");
 
@@ -51,95 +43,118 @@ public class UploadImage
             var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
             await containerClient.CreateIfNotExistsAsync();
 
-            // MODIFIED: Read file into a memory stream to be reused for original and thumbnail
-            using var memoryStream = new MemoryStream();
-            await file.CopyToAsync(memoryStream);
-            memoryStream.Position = 0; // Reset stream position
+            // Read entire upload into memory once
+            using var originalBuffer = new MemoryStream();
+            await file.CopyToAsync(originalBuffer);
+            originalBuffer.Position = 0;
 
-            // 1. Upload the original image
-            string originalBlobName = $"{imageId}/original{extension}";
+            // Decode original to ImageSharp Image object
+            originalBuffer.Position = 0;
+            using Image image = await Image.LoadAsync(originalBuffer);
+            IImageFormat? decodedFormat = image.Metadata.DecodedImageFormat; // original detected format (for metadata only)
+
+            // We will ALWAYS store as WebP (lossy) for both original-sized image and thumbnail.
+            // Decide quality settings:
+            var webpOriginalEncoder = new WebpEncoder
+            {
+                Quality = 90, // higher quality for the preserved-size original
+                Method = WebpEncodingMethod.BestQuality
+            };
+            var webpThumbEncoder = new WebpEncoder
+            {
+                Quality = 80,
+                Method = WebpEncodingMethod.Default // use default method for faster encode
+            };
+
+            // Blob names (fixed extensions now)
+            string originalBlobName = $"{imageId}/{imageId}-original.webp";
+            string thumbnailBlobName = $"{imageId}/{imageId}-thumbnail.webp";
+
+            // Encode full-size (no resize) as WebP
+            using var webpOriginalStream = new MemoryStream();
+            await image.SaveAsync(webpOriginalStream, webpOriginalEncoder);
+            webpOriginalStream.Position = 0;
+
             var originalBlobClient = containerClient.GetBlobClient(originalBlobName);
-            await originalBlobClient.UploadAsync(memoryStream, overwrite: true);
-            try
-            {
-                // Set initial metadata so cleanup / lifecycle jobs can detect abandoned uploads
-                await originalBlobClient.SetMetadataAsync(new Dictionary<string, string>
+            await originalBlobClient.UploadAsync(
+                webpOriginalStream,
+                new BlobUploadOptions
                 {
-                    ["status"] = "unconfirmed"
-                });
-            }
-            catch (Exception metaEx)
-            {
-                log.LogWarning(metaEx, "Failed setting metadata on original blob {OriginalBlobName}", originalBlobName);
-            }
-            log.LogInformation("Uploaded original image: {OriginalBlobName}", originalBlobName);
-
-            // 2. NEW: Create and upload the thumbnail
-            memoryStream.Position = 0; // Reset stream position again for ImageSharp
-
-            string thumbnailBlobName = $"{imageId}/thumbnail{extension}";
-            var thumbnailBlobClient = containerClient.GetBlobClient(thumbnailBlobName);
-
-            using (var image = await Image.LoadAsync(memoryStream))
-            {
-                // Define the resize options
-                var options = new ResizeOptions
-                {
-                    Size = new Size(150, 150),
-                    Mode = ResizeMode.Crop // Crop will ensure the image is exactly 150x150
-                };
-
-                // Mutate the image to resize it
-                image.Mutate(x => x.Resize(options));
-
-                // Save the resized image to a new memory stream
-                using var thumbnailStream = new MemoryStream();
-                await image.SaveAsync(thumbnailStream, new JpegEncoder()); // Saving as JPEG for web efficiency
-                thumbnailStream.Position = 0;
-
-                // Upload the thumbnail stream
-                await thumbnailBlobClient.UploadAsync(thumbnailStream, overwrite: true);
-                try
-                {
-                    await thumbnailBlobClient.SetMetadataAsync(new Dictionary<string, string>
+                    HttpHeaders = new BlobHttpHeaders
                     {
-                        ["status"] = "unconfirmed"
-                    });
-                }
-                catch (Exception metaThumbEx)
+                        ContentType = "image/webp",
+                        CacheControl = "public, max-age=31536000"
+                    },
+                    Metadata = new Dictionary<string, string>
+                    {
+                        ["status"] = "unconfirmed",
+                        ["source_ext"] = suppliedExtension ?? string.Empty,
+                        ["source_format"] = decodedFormat?.Name ?? "unknown"
+                    }
+                });
+
+            log.LogInformation("Uploaded original (converted WebP) image {OriginalBlob}", originalBlobName);
+
+            // Create thumbnail (square crop) then encode as WebP
+            const int thumbSize = 150;
+            using var thumbnailImage = image.Clone(ctx =>
+                ctx.Resize(new ResizeOptions
                 {
-                    log.LogWarning(metaThumbEx, "Failed setting metadata on thumbnail blob {ThumbnailBlobName}", thumbnailBlobName);
-                }
-                log.LogInformation("Uploaded thumbnail image: {ThumbnailBlobName}", thumbnailBlobName);
-            }
+                    Size = new Size(thumbSize, thumbSize),
+                    Mode = ResizeMode.Crop
+                }));
 
-            // --- MODIFIED: The rest of the function now generates the SAS token for the THUMBNAIL image ---
+            using var thumbnailStream = new MemoryStream();
+            await thumbnailImage.SaveAsync(thumbnailStream, webpThumbEncoder);
+            thumbnailStream.Position = 0;
 
-            int previewMinutes = 60 * 24; // 24 hours
+            var thumbnailBlobClient = containerClient.GetBlobClient(thumbnailBlobName);
+            await thumbnailBlobClient.UploadAsync(
+                thumbnailStream,
+                new BlobUploadOptions
+                {
+                    HttpHeaders = new BlobHttpHeaders
+                    {
+                        ContentType = "image/webp",
+                        CacheControl = "public, max-age=31536000"
+                    },
+                    Metadata = new Dictionary<string, string>
+                    {
+                        ["status"] = "unconfirmed",
+                        ["derived_from"] = originalBlobName
+                    }
+                });
+
+            log.LogInformation("Uploaded thumbnail (WebP) image {ThumbnailBlob}", thumbnailBlobName);
+
+            // SAS for thumbnail preview
+            int previewMinutes = 60 * 24;
             var previewEnv = Environment.GetEnvironmentVariable("PREVIEW_SAS_MINUTES");
             if (int.TryParse(previewEnv, out var parsed)) previewMinutes = parsed;
 
-            var previewSasBuilder = new BlobSasBuilder
+            var sasBuilder = new BlobSasBuilder
             {
                 BlobContainerName = containerName,
-                BlobName = thumbnailBlobName, // MODIFIED: SAS token now points to the thumbnail
+                BlobName = thumbnailBlobName,
                 Resource = "b",
                 ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(previewMinutes)
             };
-            previewSasBuilder.SetPermissions(BlobSasPermissions.Read);
-
-            var previewUri = thumbnailBlobClient.GenerateSasUri(previewSasBuilder); // MODIFIED: Use the thumbnail client
+            sasBuilder.SetPermissions(BlobSasPermissions.Read);
+            var previewUri = thumbnailBlobClient.GenerateSasUri(sasBuilder);
 
             return new OkObjectResult(new
             {
                 image_id = imageId,
                 message = "Upload and thumbnail creation successful",
+                original_blob = originalBlobName,
+                original_mime = "image/webp",
+                thumbnail_blob = thumbnailBlobName,
                 preview_url = previewUri.ToString()
             });
         }
         catch (Exception ex)
         {
-            log.LogError(ex, "An error occurred during image upload and processing for imageId: {ImageId}", imageId);
+            log.LogError(ex, "Error during image upload for {ImageId}", imageId);
             return new ObjectResult(new { error = "An internal error occurred." }) { StatusCode = 500 };
         }
     }
