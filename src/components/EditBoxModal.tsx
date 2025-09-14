@@ -59,13 +59,13 @@ const EditBoxModal: React.FC<EditBoxModalProps> = ({ open, onClose, box }) => {
 
   return (
     <AlertDialog open={open} onOpenChange={onClose}>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-h-[90svh] sm:max-h-[85vh] overflow-hidden flex flex-col">
         <AlertDialogHeader>
           <AlertDialogTitle>Edit Box</AlertDialogTitle>
           <AlertDialogDescription />
         </AlertDialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto pr-1 -mr-1 flex-1">
             <FormField name="name" render={({ field }) => (
               <FormItem>
                 <FormLabel>Name</FormLabel>
@@ -110,7 +110,7 @@ const EditBoxModal: React.FC<EditBoxModalProps> = ({ open, onClose, box }) => {
                 }}
               />
             </div>
-            <AlertDialogFooter>
+            <AlertDialogFooter className="sticky bottom-0 bg-background pt-2">
               <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save"}</Button>
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             </AlertDialogFooter>
