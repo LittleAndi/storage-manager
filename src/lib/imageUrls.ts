@@ -7,7 +7,12 @@ import { getImageUrls } from "@/lib/imageUpload";
  * - Provides batch prefetch to minimize network round trips.
  */
 
-const urlCache: Record<string, string> = {};
+// Caches per imageId which now may include both thumbnail and original
+interface CachedEntry {
+    thumbnail?: string;
+    original?: string;
+}
+const urlCache: Record<string, CachedEntry> = {};
 const inflight: Record<string, Promise<string | null> | undefined> = {};
 
 /**
@@ -15,18 +20,29 @@ const inflight: Record<string, Promise<string | null> | undefined> = {};
  */
 export async function resolveImageUrl(
     imageId: string | undefined | null,
+    opts: { variant?: "thumbnail" | "original" } = {},
 ): Promise<string | null> {
     if (!imageId) return null;
-    if (urlCache[imageId]) return urlCache[imageId];
+    const variant = opts.variant || "thumbnail";
+    const cached = urlCache[imageId];
+    if (cached && (cached[variant] || cached.thumbnail || cached.original)) {
+        return (cached[variant] || cached.thumbnail || cached.original) || null;
+    }
     const existing = inflight[imageId];
     if (existing) return existing;
 
     const p = (async () => {
         try {
             const result = await getImageUrls([imageId]);
-            const url = result[imageId] || null;
-            if (url) urlCache[imageId] = url;
-            return url;
+            const set = result[imageId];
+            if (set) {
+                urlCache[imageId] = {
+                    thumbnail: set.thumbnail,
+                    original: set.original,
+                };
+                return set[variant] || set.thumbnail || set.original || null;
+            }
+            return null;
         } finally {
             delete inflight[imageId];
         }
@@ -40,6 +56,7 @@ export async function resolveImageUrl(
  */
 export async function prefetchImageUrls(
     imageIds: string[],
+    options: { variant?: "thumbnail" | "original" } = {},
 ): Promise<Record<string, string>> {
     const toFetch = imageIds.filter((id) =>
         !!id && !urlCache[id] && !inflight[id]
@@ -48,16 +65,28 @@ export async function prefetchImageUrls(
         // Return any already cached subset
         return Object.fromEntries(
             imageIds.filter((id) => !!id && urlCache[id]).map(
-                (id) => [id, urlCache[id]!]
+                (
+                    id,
+                ) => [id, (urlCache[id]!.thumbnail || urlCache[id]!.original)!],
             ),
         );
     }
     // Single batched call
     const promise = getImageUrls(toFetch).then((map) => {
-        for (const [id, url] of Object.entries(map)) {
-            if (url) urlCache[id] = url;
+        const out: Record<string, string> = {};
+        for (const [id, set] of Object.entries(map)) {
+            if (set) {
+                urlCache[id] = {
+                    thumbnail: set.thumbnail,
+                    original: set.original,
+                };
+                const chosen = options.variant === "original"
+                    ? (set.original || set.thumbnail)
+                    : (set.thumbnail || set.original);
+                if (chosen) out[id] = chosen;
+            }
         }
-        return map;
+        return out;
     }).finally(() => {
         for (const id of toFetch) delete inflight[id];
     });
@@ -73,8 +102,13 @@ export async function prefetchImageUrls(
  */
 export function getCachedImageUrl(
     imageId: string | undefined | null,
+    opts: { variant?: "thumbnail" | "original" } = {},
 ): string | undefined {
-    return imageId ? urlCache[imageId] : undefined;
+    if (!imageId) return undefined;
+    const entry = urlCache[imageId];
+    if (!entry) return undefined;
+    const variant = opts.variant || "thumbnail";
+    return entry[variant] || entry.thumbnail || entry.original;
 }
 
 /**

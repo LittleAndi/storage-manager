@@ -37,7 +37,9 @@ const BoxDetail: React.FC = () => {
   }, [spaces, spaceId, fetchSpaces, fetchBoxes]);
 
 
-  const [imageUrl, setImageUrl] = React.useState<string | null>(() => (box?.image_id ? (getCachedImageUrl(box.image_id) || null) : null));
+  // Cache stores both thumbnail & original; we request thumbnail for card, original for lightbox as needed
+  const [thumbUrl, setThumbUrl] = React.useState<string | null>(() => (box?.image_id ? (getCachedImageUrl(box.image_id, { variant: "thumbnail" }) || null) : null));
+  const [fullUrl, setFullUrl] = React.useState<string | null>(() => (box?.image_id ? (getCachedImageUrl(box.image_id, { variant: "original" }) || null) : null));
   const [imgLoading, setImgLoading] = React.useState(false);
   const [lightboxOpen, setLightboxOpen] = React.useState(false);
 
@@ -45,21 +47,31 @@ const BoxDetail: React.FC = () => {
   React.useEffect(() => {
     let cancelled = false;
     if (!box?.image_id) {
-      setImageUrl(null);
+      setThumbUrl(null);
+      setFullUrl(null);
       return;
     }
-    const cached = getCachedImageUrl(box.image_id);
-    if (cached) {
-      setImageUrl(cached);
-      return;
-    }
+    const cachedThumb = getCachedImageUrl(box.image_id, { variant: "thumbnail" });
+    const cachedOrig = getCachedImageUrl(box.image_id, { variant: "original" });
+    if (cachedThumb) setThumbUrl(cachedThumb);
+    if (cachedOrig) setFullUrl(cachedOrig);
+    if (cachedThumb && cachedOrig) return; // both cached
     setImgLoading(true);
-    resolveImageUrl(box.image_id)
-      .then(url => { if (!cancelled) setImageUrl(url); })
-      .catch(() => { if (!cancelled) setImageUrl(null); })
+    resolveImageUrl(box.image_id, { variant: "thumbnail" })
+      .then(url => { if (!cancelled) setThumbUrl(url); })
+      .catch(() => { if (!cancelled) setThumbUrl(null); })
       .finally(() => { if (!cancelled) setImgLoading(false); });
     return () => { cancelled = true; };
   }, [box?.image_id]);
+
+  // Lazy load original when lightbox opens (if not already loaded)
+  React.useEffect(() => {
+    if (!lightboxOpen || !box?.image_id) return;
+    if (fullUrl) return;
+    resolveImageUrl(box.image_id, { variant: "original" })
+      .then(url => { if (url) setFullUrl(url); })
+      .catch(() => { /* ignore - keep thumbnail fallback */ });
+  }, [lightboxOpen, box?.image_id, fullUrl]);
 
   if (!box) {
     return (
@@ -125,7 +137,7 @@ const BoxDetail: React.FC = () => {
         <div className="mb-6">
           <div className="mb-4">
             {box.image_id ? (
-              imageUrl ? (
+              thumbUrl ? (
                 <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
                   <DialogTrigger asChild>
                     <button
@@ -134,7 +146,7 @@ const BoxDetail: React.FC = () => {
                       className="group relative max-h-64 rounded border bg-white cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <img
-                        src={imageUrl}
+                        src={thumbUrl}
                         alt={`${box.name} image`}
                         className="max-h-64 rounded object-contain w-full h-full"
                       />
@@ -148,7 +160,7 @@ const BoxDetail: React.FC = () => {
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
                     </DialogClose>
                     <img
-                      src={imageUrl}
+                      src={fullUrl || thumbUrl || undefined}
                       alt={`${box.name} full size image`}
                       className="max-h-[90svh] max-w-full object-contain rounded shadow-md"
                     />

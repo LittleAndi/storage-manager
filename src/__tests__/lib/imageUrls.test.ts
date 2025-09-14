@@ -18,10 +18,16 @@ describe("imageUrls caching + resolution", () => {
 
     it("fetches and caches a URL (resolveImageUrl)", async () => {
         const spy = vi.spyOn(imageUpload, "getImageUrls").mockResolvedValue({
-            abc: "https://cdn/x/abc.jpg",
+            abc: {
+                thumbnail: "https://cdn/x/abc-thumb.jpg",
+                original: "https://cdn/x/abc-orig.jpg",
+                blobs: [],
+            },
         });
-        const url = await resolveImageUrl("abc");
-        expect(url).toBe("https://cdn/x/abc.jpg");
+        const url = await resolveImageUrl("abc", { variant: "thumbnail" });
+        expect(url).toBe("https://cdn/x/abc-thumb.jpg");
+        const full = await resolveImageUrl("abc", { variant: "original" });
+        expect(full).toBe("https://cdn/x/abc-orig.jpg");
         expect(spy).toHaveBeenCalledTimes(1);
         // Second call should hit cache only
         const url2 = await resolveImageUrl("abc");
@@ -33,62 +39,72 @@ describe("imageUrls caching + resolution", () => {
         const spy = vi.spyOn(imageUpload, "getImageUrls").mockImplementation(
             async (ids: string[]) => {
                 await new Promise((r) => setTimeout(r, 10));
-                return { [ids[0]]: "https://cdn/x/shared.jpg" } as Record<
-                    string,
-                    string
-                >;
+                return {
+                    [ids[0]]: {
+                        thumbnail: "https://cdn/x/shared-thumb.jpg",
+                        original: "https://cdn/x/shared-orig.jpg",
+                        blobs: [],
+                    },
+                };
             },
         );
         const p1 = resolveImageUrl("shared");
         const p2 = resolveImageUrl("shared");
         const [u1, u2] = await Promise.all([p1, p2]);
-        expect(u1).toBe("https://cdn/x/shared.jpg");
-        expect(u2).toBe("https://cdn/x/shared.jpg");
+        expect(u1).toBe("https://cdn/x/shared-thumb.jpg");
+        expect(u2).toBe("https://cdn/x/shared-thumb.jpg");
         expect(spy).toHaveBeenCalledTimes(1);
     });
 
     it("prefetchImageUrls batches multiple ids and populates cache", async () => {
         const spy = vi.spyOn(imageUpload, "getImageUrls").mockResolvedValue({
-            a: "u/a",
-            b: "u/b",
+            a: { thumbnail: "u/a_t", original: "u/a_o", blobs: [] },
+            b: { thumbnail: "u/b_t", original: "u/b_o", blobs: [] },
         });
         const res = await prefetchImageUrls(["a", "b"]);
-        expect(res).toEqual({ a: "u/a", b: "u/b" });
+        expect(res).toEqual({ a: "u/a_t", b: "u/b_t" });
         expect(spy).toHaveBeenCalledTimes(1);
         // Now resolveImageUrl should not trigger a fetch
         const urlA = await resolveImageUrl("a");
-        expect(urlA).toBe("u/a");
+        expect(urlA).toBe("u/a_t");
         expect(spy).toHaveBeenCalledTimes(1);
     });
 
     it("prefetchImageUrls skips cached ids and only fetches missing", async () => {
         vi.spyOn(imageUpload, "getImageUrls").mockResolvedValueOnce({
-            c: "u/c",
+            c: { thumbnail: "u/c_t", original: "u/c_o", blobs: [] },
         });
         await prefetchImageUrls(["c"]);
         // Now fetch d + cached c
         const spy2 = vi.spyOn(imageUpload, "getImageUrls").mockResolvedValue({
-            d: "u/d",
+            d: { thumbnail: "u/d_t", original: "u/d_o", blobs: [] },
         });
         const res = await prefetchImageUrls(["c", "d"]);
-        expect(res).toEqual({ d: "u/d" });
+        expect(res).toEqual({ d: "u/d_t" });
         // Only new id fetched
         expect(spy2).toHaveBeenCalledTimes(1);
     });
 
     it("gracefully handles missing url from API (returns null and not cached)", async () => {
-        const spy = vi.spyOn(imageUpload, "getImageUrls").mockResolvedValue({
-            missing: undefined as unknown as string,
-        });
+        const spy = vi.spyOn(imageUpload, "getImageUrls").mockResolvedValue({});
         const url = await resolveImageUrl("missing");
         expect(url).toBeNull();
         // Second call should trigger another fetch since not cached
         const spy2 = vi.spyOn(imageUpload, "getImageUrls").mockResolvedValue({
-            missing: "later-url",
+            missing: { thumbnail: "later-url", blobs: [], original: undefined },
         });
-        const url2 = await resolveImageUrl("missing");
+        const url2 = await resolveImageUrl("missing", { variant: "thumbnail" });
         expect(url2).toBe("later-url");
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy2).toHaveBeenCalledTimes(1);
+    });
+
+    it("resolveImageUrl falls back when only original present", async () => {
+        const spy = vi.spyOn(imageUpload, "getImageUrls").mockResolvedValue({
+            solo: { thumbnail: undefined, original: "orig-only", blobs: [] },
+        });
+        const url = await resolveImageUrl("solo", { variant: "thumbnail" });
+        expect(url).toBe("orig-only");
+        expect(spy).toHaveBeenCalledTimes(1);
     });
 });

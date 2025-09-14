@@ -41,7 +41,8 @@ const SpaceDetail: React.FC = () => {
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [showLabelSheet, setShowLabelSheet] = React.useState(false);
   const [lightboxOpen, setLightboxOpen] = React.useState(false);
-  const [spaceImageUrl, setSpaceImageUrl] = React.useState<string | null>(() => (space?.image_id ? (getCachedImageUrl(space.image_id) || null) : null));
+  const [thumbUrl, setThumbUrl] = React.useState<string | null>(() => (space?.image_id ? (getCachedImageUrl(space.image_id, { variant: "thumbnail" }) || null) : null));
+  const [fullUrl, setFullUrl] = React.useState<string | null>(() => (space?.image_id ? (getCachedImageUrl(space.image_id, { variant: "original" }) || null) : null));
   const [spaceImgLoading, setSpaceImgLoading] = React.useState(false);
 
   const openCreateBox = () => setCreateBoxOpen(true);
@@ -60,21 +61,31 @@ const SpaceDetail: React.FC = () => {
   React.useEffect(() => {
     let cancelled = false;
     if (!space?.image_id) {
-      setSpaceImageUrl(null);
+      setThumbUrl(null);
+      setFullUrl(null);
       return;
     }
-    const cached = getCachedImageUrl(space.image_id);
-    if (cached) {
-      setSpaceImageUrl(cached);
-      return;
-    }
+    const cachedThumb = getCachedImageUrl(space.image_id, { variant: "thumbnail" });
+    const cachedOrig = getCachedImageUrl(space.image_id, { variant: "original" });
+    if (cachedThumb) setThumbUrl(cachedThumb);
+    if (cachedOrig) setFullUrl(cachedOrig);
+    if (cachedThumb && cachedOrig) return;
     setSpaceImgLoading(true);
-    resolveImageUrl(space.image_id)
-      .then(url => { if (!cancelled) setSpaceImageUrl(url); })
-      .catch(() => { if (!cancelled) setSpaceImageUrl(null); })
+    resolveImageUrl(space.image_id, { variant: "thumbnail" })
+      .then(url => { if (!cancelled) setThumbUrl(url); })
+      .catch(() => { if (!cancelled) setThumbUrl(null); })
       .finally(() => { if (!cancelled) setSpaceImgLoading(false); });
     return () => { cancelled = true; };
   }, [space?.image_id]);
+
+  // Fetch original lazily when lightbox opens
+  React.useEffect(() => {
+    if (!lightboxOpen || !space?.image_id) return;
+    if (fullUrl) return;
+    resolveImageUrl(space.image_id, { variant: "original" })
+      .then(u => { if (u) setFullUrl(u); })
+      .catch(() => { /* ignore */ });
+  }, [lightboxOpen, space?.image_id, fullUrl]);
 
   const permission = useSpacePermission(spaceId || "");
   // Always call hooks first
@@ -155,7 +166,7 @@ const SpaceDetail: React.FC = () => {
         <MemberList spaceId={space.id} />
       </div>
       {space.image_id && (
-        spaceImageUrl ? (
+        thumbUrl ? (
           <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
             <DialogTrigger asChild>
               <button
@@ -164,7 +175,7 @@ const SpaceDetail: React.FC = () => {
                 className="group relative w-32 h-32 rounded mb-4 border bg-white cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <img
-                  src={spaceImageUrl}
+                  src={thumbUrl}
                   alt={`${space.name} image`}
                   className="w-full h-full object-contain"
                 />
@@ -178,7 +189,7 @@ const SpaceDetail: React.FC = () => {
                 <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
               </DialogClose>
               <img
-                src={spaceImageUrl}
+                src={fullUrl || thumbUrl || undefined}
                 alt={`${space.name} full size image`}
                 className="max-h-[90svh] max-w-full object-contain rounded shadow-md"
               />

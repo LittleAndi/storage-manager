@@ -77,15 +77,26 @@ export async function confirmImage(
     return true;
 }
 
-/** Resolve a set of image ids to signed URLs. */
+// New response element per blob
+export interface ImageBlobInfo {
+    name: string; // blob name without extension
+    url: string; // signed URL
+    type: string; // 'thumbnail' | 'original' (string to allow forward compat)
+}
+
+export interface ImageUrlSet {
+    thumbnail?: string; // preferred small preview
+    original?: string; // full resolution (still webp but higher quality)
+    // Keep raw list for any future UI needs (e.g., additional transforms)
+    blobs: ImageBlobInfo[];
+}
+
+/** Resolve a set of image ids to signed URLs (thumbnail + original). */
 export async function getImageUrls(
     imageIds: string[],
-): Promise<Record<string, string>> {
-    // Backend expects a raw JSON array body; returns an object mapping imageId -> { key, value }
+): Promise<Record<string, ImageUrlSet>> {
     if (!imageIds.length) return {};
-    const data = await http<
-        Record<string, { key: string; value: string } | null>
-    >(
+    const data = await http<Record<string, ImageBlobInfo[] | null>>(
         "/api/images/urls",
         {
             method: "POST",
@@ -93,11 +104,22 @@ export async function getImageUrls(
             body: JSON.stringify(imageIds),
         },
     );
-    const map: Record<string, string> = {};
-    for (const [imageId, kv] of Object.entries(data || {})) {
-        if (kv && typeof kv.value === "string") {
-            map[imageId] = kv.value;
+    const map: Record<string, ImageUrlSet> = {};
+    for (const [imageId, arr] of Object.entries(data || {})) {
+        if (!Array.isArray(arr)) continue;
+        const blobs = arr.filter(
+            (b): b is ImageBlobInfo => !!b && typeof b.url === "string",
+        );
+        let thumbnail: string | undefined;
+        let original: string | undefined;
+        for (const b of blobs) {
+            if (b.type === "thumbnail" && !thumbnail) thumbnail = b.url;
+            if (b.type === "original" && !original) original = b.url;
         }
+        // Fallbacks: if only one exists use it for both roles
+        if (!thumbnail && original) thumbnail = original;
+        if (!original && thumbnail) original = thumbnail;
+        map[imageId] = { thumbnail, original, blobs };
     }
     return map;
 }

@@ -40,7 +40,7 @@ public class GetImageUrls(ILogger<GetImageUrls> log)
         {
             var blobPrefix = $"{imageId}/";
             var blobsForImage = new List<object>();
-            await foreach (var blobItem in containerClient.GetBlobsAsync(prefix: blobPrefix))
+            await foreach (var blobItem in containerClient.GetBlobsAsync(traits: Azure.Storage.Blobs.Models.BlobTraits.Metadata, prefix: blobPrefix))
             {
                 var blobClient = containerClient.GetBlobClient(blobItem.Name);
                 var sasUri = blobClient.GenerateSasUri(Azure.Storage.Sas.BlobSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1));
