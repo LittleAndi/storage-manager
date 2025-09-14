@@ -14,6 +14,7 @@ import { getCachedImageUrl, resolveImageUrl } from "@/lib/imageUrls";
 import ImagePlaceholder from "@/components/ImagePlaceholder";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogClose, DialogDescription } from "@/components/ui/dialog";
 
 const BoxDetail: React.FC = () => {
   const { spaceId, boxId } = useParams();
@@ -38,6 +39,7 @@ const BoxDetail: React.FC = () => {
 
   const [imageUrl, setImageUrl] = React.useState<string | null>(() => (box?.image_id ? (getCachedImageUrl(box.image_id) || null) : null));
   const [imgLoading, setImgLoading] = React.useState(false);
+  const [lightboxOpen, setLightboxOpen] = React.useState(false);
 
   // Resolve image URL if box has image_id and not cached
   React.useEffect(() => {
@@ -124,11 +126,34 @@ const BoxDetail: React.FC = () => {
           <div className="mb-4">
             {box.image_id ? (
               imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt={`${box.name} image`}
-                  className="max-h-64 rounded border object-contain bg-white"
-                />
+                <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+                  <DialogTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => setLightboxOpen(true)}
+                      className="group relative max-h-64 rounded border bg-white cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={`${box.name} image`}
+                        className="max-h-64 rounded object-contain w-full h-full"
+                      />
+                      <span className="absolute inset-0 hidden items-center justify-center bg-black/40 text-white text-xs font-medium group-hover:flex">Click to enlarge</span>
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="p-2 bg-background/95 backdrop-blur max-w-[min(95vw,1100px)] max-h-[95svh] flex flex-col items-center justify-center">
+                    <DialogTitle className="sr-only">{box.name} image</DialogTitle>
+                    <DialogDescription className="sr-only">Full size preview of the box image. Press Escape or the close button to exit.</DialogDescription>
+                    <DialogClose aria-label="Close" className="right-2 top-2">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+                    </DialogClose>
+                    <img
+                      src={imageUrl}
+                      alt={`${box.name} full size image`}
+                      className="max-h-[90svh] max-w-full object-contain rounded shadow-md"
+                    />
+                  </DialogContent>
+                </Dialog>
               ) : (
                 <ImagePlaceholder className="h-40 w-40 rounded" loading={imgLoading} />
               )

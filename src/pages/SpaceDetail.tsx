@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import EditSpaceModal from "@/components/EditSpaceModal";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { useSpacePermission } from "@/state/useSpacePermission";
 import EditableTitle from "@/components/EditableTitle";
 import { useEntityUpdate } from "@/hooks/useEntityUpdate";
@@ -38,6 +39,7 @@ const SpaceDetail: React.FC = () => {
   const removeSpace = useSpacesStore(state => state.removeSpace);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [showLabelSheet, setShowLabelSheet] = React.useState(false);
+  const [lightboxOpen, setLightboxOpen] = React.useState(false);
 
   const openCreateBox = () => setCreateBoxOpen(true);
   const closeCreateBox = () => setCreateBoxOpen(false);
@@ -137,7 +139,34 @@ const SpaceDetail: React.FC = () => {
         <MemberList spaceId={space.id} />
       </div>
       {space.image_id && getCachedImageUrl(space.image_id) && (
-        <img src={getCachedImageUrl(space.image_id)} alt={`${space.name} image`} className="w-32 h-32 rounded mb-4" />
+        <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              onClick={() => setLightboxOpen(true)}
+              className="group relative w-32 h-32 rounded mb-4 border bg-white cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <img
+                src={getCachedImageUrl(space.image_id)!}
+                alt={`${space.name} image`}
+                className="w-full h-full object-contain"
+              />
+              <span className="absolute inset-0 hidden items-center justify-center bg-black/40 text-white text-[10px] font-medium group-hover:flex">Click to enlarge</span>
+            </button>
+          </DialogTrigger>
+          <DialogContent className="p-2 bg-background/95 backdrop-blur max-w-[min(95vw,1100px)] max-h-[95svh] flex flex-col items-center justify-center">
+            <DialogTitle className="sr-only">{space.name} image</DialogTitle>
+            <DialogDescription className="sr-only">Full size preview of the space image. Press Escape or the close button to exit.</DialogDescription>
+            <DialogClose aria-label="Close" className="right-2 top-2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+            </DialogClose>
+            <img
+              src={getCachedImageUrl(space.image_id)!}
+              alt={`${space.name} full size image`}
+              className="max-h-[90svh] max-w-full object-contain rounded shadow-md"
+            />
+          </DialogContent>
+        </Dialog>
       )}
       <div className="mb-4 flex gap-2 flex-wrap">
         <Button
