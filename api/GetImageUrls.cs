@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Azure.Storage.Blobs;
+using Azure.Storage.Sas;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -43,7 +44,20 @@ public class GetImageUrls(ILogger<GetImageUrls> log)
             await foreach (var blobItem in containerClient.GetBlobsAsync(traits: Azure.Storage.Blobs.Models.BlobTraits.Metadata, prefix: blobPrefix))
             {
                 var blobClient = containerClient.GetBlobClient(blobItem.Name);
-                var sasUri = blobClient.GenerateSasUri(Azure.Storage.Sas.BlobSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1));
+
+                var sasBuilder = new BlobSasBuilder
+                {
+                    BlobContainerName = containerClient.Name,
+                    BlobName = blobItem.Name,
+                    Resource = "b",                  // blob
+                    StartsOn = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    ExpiresOn = DateTimeOffset.UtcNow.AddHours(1),
+                    Protocol = SasProtocol.Https
+                };
+                sasBuilder.SetPermissions(BlobSasPermissions.Read);
+                sasBuilder.CacheControl = "public, max-age=3600"; // Match the SAS expiry
+
+                var sasUri = blobClient.GenerateSasUri(sasBuilder);
                 var fileName = Path.GetFileNameWithoutExtension(blobItem.Name);
                 blobItem.Metadata.TryGetValue("type", out var typeValue);
                 blobsForImage.Add(new
