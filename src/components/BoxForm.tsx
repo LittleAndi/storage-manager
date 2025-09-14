@@ -51,6 +51,7 @@ export const BoxForm: React.FC<BoxFormProps> = ({
       image_id: initialValues?.image_id || "",
     },
   });
+  const [imageUploading, setImageUploading] = React.useState(false);
 
   // Expose form instance
   React.useEffect(() => { formRefCb?.(form); }, [form, formRefCb]);
@@ -129,6 +130,7 @@ export const BoxForm: React.FC<BoxFormProps> = ({
             description={mode === "create" ? "Upload an optional image for this box." : "Upload, change, or remove the box image."}
             variant="simple"
             canClear={mode === "edit"}
+            onUploadingChange={(u) => setImageUploading(u)}
             onUploaded={(r) => {
               form.setValue("image_id", r.imageId, { shouldDirty: true, shouldTouch: true });
             }}
@@ -138,7 +140,13 @@ export const BoxForm: React.FC<BoxFormProps> = ({
           />
         </div>
         <div className="sticky bottom-0 bg-background pt-2 flex gap-2 justify-end">
-          <Button type="submit" disabled={loading}>{loading ? (mode === "create" ? "Creating..." : "Saving...") : (submitLabel || (mode === "create" ? "Create" : "Save"))}</Button>
+            <Button type="submit" disabled={loading || imageUploading} aria-busy={loading || imageUploading}>
+              {imageUploading
+                ? "Waiting for image..."
+                : loading
+                  ? (mode === "create" ? "Creating..." : "Saving...")
+                  : (submitLabel || (mode === "create" ? "Create" : "Save"))}
+            </Button>          
           <Button type="button" variant="outline" onClick={onCancel}>{cancelLabel}</Button>
         </div>
       </form>

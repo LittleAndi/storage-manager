@@ -9,7 +9,7 @@ interface ImageFieldValue {
   preview_url?: string; // ephemeral preview (signed)
 }
 
-interface ImageUploadFieldProps {
+export interface ImageUploadFieldProps {
   /** name of the field in react-hook-form; will store ImageFieldValue (object) */
   name: string;
   label?: string;
@@ -24,29 +24,30 @@ interface ImageUploadFieldProps {
   canClear?: boolean;
   /** Callback invoked when user clears image (after field state reset). */
   onClear?: () => void;
+  onUploadingChange?: (uploading: boolean) => void; // NEW
 }
 
-export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
-  name,
-  label = "Image",
-  description,
-  onUploaded,
-  variant = 'simple',
-  previewSize,
-  canClear = true,
-  onClear,
-}) => {
+export const ImageUploadField: React.FC<ImageUploadFieldProps> = (props) => {
+  const {
+    name,
+    label = "Image",
+    description,
+    onUploaded,
+    variant = 'simple',
+    previewSize,
+    canClear = true,
+    onClear,
+    onUploadingChange,
+  } = props;
   const { setValue, watch } = useFormContext();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const value = watch(name) as ImageFieldValue | undefined;
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setError(null);
+  const startUpload = async (file: File) => {
     setUploading(true);
+    onUploadingChange?.(true);
     try {
       const result = await uploadImage(file);
       const field: ImageFieldValue = { image_id: result.imageId, preview_url: result.previewUrl || URL.createObjectURL(file) };
@@ -56,7 +57,13 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
       setError((err as Error).message || "Upload failed");
     } finally {
       setUploading(false);
+      onUploadingChange?.(false);
     }
+  };
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) void startUpload(file);
   }
 
   function handleRemove() {
