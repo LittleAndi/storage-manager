@@ -154,19 +154,59 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
       ),
     }),
   removeSpace: async (id) => {
-    const target = get().spaces.find(s => s.id === id);
+    const target = get().spaces.find((s) => s.id === id);
     const imageId = target?.image_id;
-    const { error } = await supabase.from("spaces").delete().eq("id", id);
-    if (error) {
-      set({ error: error.message });
-      console.error(error.message);
+    // 1. Remove space members first to avoid FK or policy issues when deleting shared spaces
+    const { error: memberError } = await supabase
+      .from("space_members")
+      .delete()
+      .eq("space_id", id);
+    if (memberError) {
+      set({ error: memberError.message });
+      console.error("Failed to delete space members:", memberError.message);
+      return; // abort deletion if we cannot remove members
+    }
+
+    // 2. Delete the space itself
+    const { error: spaceError } = await supabase.from("spaces").delete().eq(
+      "id",
+      id,
+    );
+    if (spaceError) {
+      set({ error: spaceError.message });
+      console.error(spaceError.message);
       return;
     }
+
+    // 3. Update local state and cached maps
     const updated = get().spaces.filter((s) => s.id !== id);
-    set({ spaces: updated });
-    localStorage.setItem("spaces", JSON.stringify(updated));
+    set((state) => {
+      const { membershipCounts, membershipRoles, membersBySpace, imageUrls } =
+        state;
+      const newMembershipCounts = { ...membershipCounts };
+      const newMembershipRoles = { ...membershipRoles };
+      const newMembersBySpace = { ...membersBySpace };
+      const newImageUrls = { ...imageUrls };
+      delete newMembershipCounts[id];
+      delete newMembershipRoles[id];
+      delete newMembersBySpace[id];
+      delete newImageUrls[id];
+      try {
+        localStorage.setItem("spaces", JSON.stringify(updated));
+        localStorage.setItem("spaceImageUrls", JSON.stringify(newImageUrls));
+      } catch {
+        // ignore storage failures
+      }
+      return {
+        spaces: updated,
+        membershipCounts: newMembershipCounts,
+        membershipRoles: newMembershipRoles,
+        membersBySpace: newMembersBySpace,
+        imageUrls: newImageUrls,
+      } as Partial<SpacesState>;
+    });
     if (imageId) {
-      fetch(`/api/images/${imageId}`, { method: "DELETE" }).catch(e => {
+      fetch(`/api/images/${imageId}`, { method: "DELETE" }).catch((e) => {
         console.warn("Failed deleting image for space", imageId, e);
       });
     }
