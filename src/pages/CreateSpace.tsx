@@ -27,7 +27,7 @@ const CreateSpace: React.FC = () => {
   const { handleSubmit, formState: { isSubmitting }, reset } = form;
   const navigate = useNavigate();
   const addSpace = useSpacesStore(state => state.addSpace);
-
+  const [imageUploading, setImageUploading] = React.useState(false);
   const onSubmit = async (data: SpaceFormValues) => {
     // Save to local state and Supabase
     const owner_id = useAuthStore.getState().user!.id;
@@ -106,8 +106,9 @@ const CreateSpace: React.FC = () => {
                 <ImageUploadField
                   name="space_image_upload"
                   label="Space Image (optional)"
-                  variant="simple"
                   description="Upload an optional image for this space."
+                  variant="simple"
+                  onUploadingChange={(u) => setImageUploading(u)}
                   onUploaded={(r) => {
                     form.setValue("image_id", r.imageId, { shouldDirty: true, shouldTouch: true });
                     toast.success("Image uploaded");
@@ -117,8 +118,8 @@ const CreateSpace: React.FC = () => {
             </CardContent>
             <div className="h-4" />
             <CardFooter>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Space"}
+              <Button type="submit" className="w-full" disabled={isSubmitting || imageUploading} aria-busy={isSubmitting || imageUploading}>
+                {imageUploading ? "Waiting for image..." : isSubmitting ? "Creating..." : "Create Space"}
               </Button>
             </CardFooter>
           </form>

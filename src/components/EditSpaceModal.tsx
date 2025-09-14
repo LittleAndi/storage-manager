@@ -59,6 +59,7 @@ const EditSpaceModal: React.FC<EditSpaceModalProps> = ({ open, onClose, space })
     onSuccess: () => toast.success("Space updated"),
     onError: (e: unknown) => toast.error(`Update failed: ${(e as Error)?.message || String(e)}`),
   });
+  const [imageUploading, setImageUploading] = React.useState(false);
 
   async function onSubmit(values: SpaceFormValuesWithImage) {
     // If cleared (empty string) we explicitly send null so DB sets it to null
@@ -102,6 +103,7 @@ const EditSpaceModal: React.FC<EditSpaceModalProps> = ({ open, onClose, space })
                 description="Upload, change, or remove the space image."
                 variant="simple"
                 canClear={true}
+                onUploadingChange={(u) => setImageUploading(u)}
                 onUploaded={(r) => {
                   form.setValue("image_id", r.imageId, { shouldDirty: true, shouldTouch: true });
                 }}
@@ -111,7 +113,13 @@ const EditSpaceModal: React.FC<EditSpaceModalProps> = ({ open, onClose, space })
               />
             </FormItem>
             <AlertDialogFooter>
-              <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save"}</Button>
+              <Button
+                type="submit"
+                disabled={loading || imageUploading}
+                aria-busy={loading || imageUploading}
+              >
+                {imageUploading ? "Waiting for image..." : loading ? "Saving..." : "Save"}
+              </Button>
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             </AlertDialogFooter>
           </form>
