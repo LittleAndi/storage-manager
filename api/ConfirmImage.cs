@@ -52,14 +52,14 @@ public class ConfirmImage(ILogger<ConfirmImage> log)
         {
             var blobClient = containerClient.GetBlobClient(blobItem.Name);
 
-            // Merge existing metadata with ownership + confirmed status
-            var metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var kv in blobItem.Metadata)
+            // Fetch current metadata explicitly (listing without traits omits it)
+            var props = await blobClient.GetPropertiesAsync();
+            var metadata = new Dictionary<string, string>(props.Value.Metadata, StringComparer.OrdinalIgnoreCase)
             {
-                metadata[kv.Key] = kv.Value;
-            }
-            metadata[metadataKey] = metadataValue; // e.g. box_id / space_id
-            metadata["status"] = "confirmed";
+                // Merge / upsert ownership + status
+                [metadataKey] = metadataValue, // e.g. box_id / space_id
+                ["status"] = "confirmed"
+            };
 
             try
             {
