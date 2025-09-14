@@ -58,12 +58,18 @@ public class GetImageUrls(ILogger<GetImageUrls> log)
                 sasBuilder.CacheControl = "public, max-age=3600"; // Match the SAS expiry
 
                 var sasUri = blobClient.GenerateSasUri(sasBuilder);
+
+                var customHostBuilder = new UriBuilder(sasUri)
+                {
+                    Host = Environment.GetEnvironmentVariable("BLOB_CUSTOM_HOST") ?? sasUri.Host
+                };
+
                 var fileName = Path.GetFileNameWithoutExtension(blobItem.Name);
                 blobItem.Metadata.TryGetValue("type", out var typeValue);
                 blobsForImage.Add(new
                 {
                     name = fileName,
-                    url = sasUri.ToString(),
+                    url = customHostBuilder.Uri.ToString(),
                     type = typeValue ?? string.Empty
                 });
             }

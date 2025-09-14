@@ -182,6 +182,38 @@ You can find these values in your Supabase dashboard:
 
 These variables are required for the app to connect to Supabase for authentication and data access. Never commit your real `.env` file to a public repository.
 
+### Additional Environment Variables (Image Host Override)
+
+The Azure Function `GetImageUrls` supports an optional environment variable to rewrite the host portion of generated SAS URLs (useful for serving images through a custom domain / CDN while still leveraging signed query parameters):
+
+```
+BLOB_CUSTOM_HOST=storagemanagerstatic.example.com
+```
+
+Behavior:
+- When set, each blob SAS URI returned by `/api/images/urls` will have its `Host` replaced with `BLOB_CUSTOM_HOST`, preserving the full path and SAS query string (signature remains valid because only the authority portion changes).
+- When not set, the raw Storage Account blob endpoint host is used.
+
+Prerequisites / Notes:
+- Your custom host should CNAME to the underlying Blob endpoint or be fronted by a service (e.g., Azure Front Door / CDN) that forwards to it.
+- Ensure HTTPS is configured (cert + binding) on the fronting service / custom domain.
+- If you use aggressive CDN caching, remember SAS tokens here currently expire after 1 hour (Cache-Control is set to `public, max-age=3600`).
+- Local development: you can add the setting to `api/local.settings.json` under `Values`:
+  ```json
+  {
+    "IsEncrypted": false,
+    "Values": {
+      "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+      "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+      "StorageAccountConnectionString": "<your-connection-string>",
+      "BLOB_CONTAINER_NAME": "images",
+      "BLOB_CUSTOM_HOST": "storagemanagerstatic.local.test" 
+    }
+  }
+  ```
+
+If you change `BLOB_CUSTOM_HOST` in production, previously cached URLs (with the old host) will continue to function until their SAS expiry, after which clients will request fresh URLs reflecting the new host.
+
 ## Hosting
 
 Currently this is designed to be hosted in Azure using Azure Static Web Apps (Free sku) and a Storage Account.
