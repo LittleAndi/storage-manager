@@ -2,7 +2,7 @@
 import React from "react";
 import AppShell from "../components/AppShell";
 // import ItemRow from "../components/ItemRow";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useBoxesStore } from "@/state/boxesStore";
 import EditBoxModal from "@/components/EditBoxModal";
 import { Button } from "@/components/ui/button";
@@ -12,16 +12,21 @@ import { useEntityUpdate } from "@/hooks/useEntityUpdate";
 import { useSpacesStore } from "@/state/spacesStore";
 import { getCachedImageUrl, resolveImageUrl } from "@/lib/imageUrls";
 import ImagePlaceholder from "@/components/ImagePlaceholder";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { buttonVariants } from "@/components/ui/button-variants";
 
 const BoxDetail: React.FC = () => {
   const { spaceId, boxId } = useParams();
+  const navigate = useNavigate();
   const spaces = useSpacesStore((state) => state.spaces);
   const fetchSpaces = useSpacesStore((state) => state.fetchSpaces);
   const fetchBoxes = useBoxesStore((state) => state.fetchBoxes);
   const box = useBoxesStore(state => state.boxes.find(b => b.id === boxId));
+  const removeBox = useBoxesStore(state => state.removeBox);
   const [editOpen, setEditOpen] = React.useState(false);
   const permission = useSpacePermission(spaceId || "");
   const { mutate: updateBoxName } = useEntityUpdate<{ name: string }>({ kind: "box", entity: box || { id: "__placeholder__", name: "", space_id: "__placeholder__" } });
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!spaces || spaces.length === 0) {
@@ -81,13 +86,42 @@ const BoxDetail: React.FC = () => {
           className="flex-1"
         />
         {permission.canEdit && (
-          <Button variant="outline" onClick={() => setEditOpen(true)} aria-label="Edit box">Edit Box</Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => setEditOpen(true)} aria-label="Edit box">Edit Box</Button>
+            <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" aria-label="Delete box">
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this box?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. The box and its metadata will be permanently removed.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className={buttonVariants({ variant: "destructive" })}
+                    onClick={async () => {
+                      if (!boxId) return;
+                      await removeBox(boxId);
+                      navigate(`/spaces/${spaceId}`);
+                    }}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         )}
       </div>
       {(
         <div className="mb-6">
           <div className="mb-4">
-            <div className="font-semibold mb-1">Image:</div>
             {box.image_id ? (
               imageUrl ? (
                 <img
@@ -101,8 +135,6 @@ const BoxDetail: React.FC = () => {
             ) : (
               <ImagePlaceholder className="h-40 w-40 rounded" />
             )}
-          </div>
-          <div className="mb-2 flex items-center gap-2"><span className="font-semibold">Name:</span>
           </div>
           <div className="mb-2"><span className="font-semibold">Location:</span> {box.location || <span className="text-muted-foreground">(none)</span>}</div>
           <div className="mb-2"><span className="font-semibold">Content:</span><br />
