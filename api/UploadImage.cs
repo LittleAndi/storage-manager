@@ -51,6 +51,8 @@ public class UploadImage(ILogger<UploadImage> log)
             // Decode original to ImageSharp Image object
             originalBuffer.Position = 0;
             using Image image = await Image.LoadAsync(originalBuffer);
+            // Apply EXIF orientation so images are stored correctly regardless of source orientation
+            image.Mutate(x => x.AutoOrient());
             IImageFormat? decodedFormat = image.Metadata.DecodedImageFormat; // original detected format (for metadata only)
 
             // We will ALWAYS store as WebP (lossy) for both original-sized image and thumbnail.
