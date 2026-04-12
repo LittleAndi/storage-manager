@@ -181,7 +181,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </ul>
           </nav>
         </aside>
-        <main className="flex-1 p-4 md:ml-64">{children}</main>
+        <main className="flex-1 p-4">{children}</main>
       </div>
     </div>
   );
