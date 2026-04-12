@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, type JSX } from 'react';
 import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './state/authStore';
+import AppSkeleton from './components/AppSkeleton';
 
 const GetStarted = lazy(() => import('./pages/GetStarted'));
 const Spaces = lazy(() => import('./pages/Spaces'));
@@ -49,7 +50,7 @@ function App() {
   return (
     <>
       <Toaster />
-      <Suspense fallback={<div role="status" aria-live="polite" className="min-h-screen flex items-center justify-center text-xl">Loading...</div>}>
+      <Suspense fallback={<AppSkeleton />}>
         <Routes>
         <Route path="/auth/*" element={<Auth />} />
         <Route

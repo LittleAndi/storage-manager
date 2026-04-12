@@ -8,6 +8,7 @@ import { useAuthStore } from './state/authStore';
 import { supabase } from './supabaseClient';
 import type { UserProfile } from "@/types/entities";
 import { supabaseUserToUserProfile } from "./lib/mappers";
+import AppSkeleton from "./components/AppSkeleton";
 
 export function Root() {
   const [loading, setLoading] = useState(true);
@@ -31,7 +32,7 @@ export function Root() {
   }, [setUser, setToken]);
 
   if (loading) {
-    return <div role="status" aria-live="polite" className="min-h-screen flex items-center justify-center text-xl">Loading...</div>;
+    return <AppSkeleton />;
   }
   return <App />;
 }
