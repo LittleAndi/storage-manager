@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from '@/state/authStore';
+import { toast } from 'sonner';
 
 const Auth: React.FC = () => {
   const location = useLocation();
@@ -38,7 +39,7 @@ const Auth: React.FC = () => {
       },
     });
     if (error) {
-      alert('Google sign-in failed: ' + error.message);
+      toast.error('Google sign-in failed: ' + error.message);
     }
   };
   const handleFacebookLogin = async () => {
@@ -49,7 +50,7 @@ const Auth: React.FC = () => {
       }
     });
     if (error) {
-      alert('Facebook sign-in failed: ' + error.message);
+      toast.error('Facebook sign-in failed: ' + error.message);
     }
   };
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;

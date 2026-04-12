@@ -77,7 +77,7 @@ const BoxCard: React.FC<BoxCardProps> = ({ name, location, itemCount, thumbnailU
         <ImagePlaceholder className="w-12 h-12 rounded mr-4" label="No image" />
       )}
       <div className="flex-1">
-        <h3 className="text-md font-semibold">{name}</h3>
+        <h3 className="text-base font-semibold">{name}</h3>
         {location && <p className="text-xs text-muted-foreground">{location}</p>}
         {typeof itemCount === "number" && (
           <p className="text-xs text-muted-foreground">Items: {itemCount}</p>

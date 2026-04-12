@@ -179,22 +179,6 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   >
                     Logout
                   </Button>
-                  <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm logout</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to log out?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={handleLogout}>
-                          Logout
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
                 </li>
               )}
             </ul>
@@ -202,6 +186,22 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </aside>
         <main id="main-content" className="flex-1 p-4">{children}</main>
       </div>
+      <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm logout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to log out?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={handleLogout}>
+              Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
