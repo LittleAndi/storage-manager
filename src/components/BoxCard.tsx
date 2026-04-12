@@ -65,7 +65,7 @@ const BoxCard: React.FC<BoxCardProps> = ({ name, location, itemCount, thumbnailU
     <button
       type="button"
       ref={ref}
-      className="bg-white rounded shadow p-4 flex items-center cursor-pointer w-full text-left"
+      className="bg-card rounded shadow p-4 flex items-center cursor-pointer w-full text-left"
       onClick={onOpen}
       aria-label={`Open box ${name}`}
     >
@@ -78,9 +78,9 @@ const BoxCard: React.FC<BoxCardProps> = ({ name, location, itemCount, thumbnailU
       )}
       <div className="flex-1">
         <h3 className="text-md font-semibold">{name}</h3>
-        {location && <p className="text-xs text-gray-500">{location}</p>}
+        {location && <p className="text-xs text-muted-foreground">{location}</p>}
         {typeof itemCount === "number" && (
-          <p className="text-xs text-gray-400">Items: {itemCount}</p>
+          <p className="text-xs text-muted-foreground">Items: {itemCount}</p>
         )}
       </div>
     </button>

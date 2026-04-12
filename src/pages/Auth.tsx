@@ -54,8 +54,8 @@ const Auth: React.FC = () => {
   };
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm bg-white rounded shadow p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+      <div className="w-full max-w-sm bg-card rounded shadow p-6">
         <h1 className="text-2xl font-bold mb-2 text-center">Sign In / Sign Up</h1>
         <h2 className="text-1xl mb-6 text-center">Get started organizing your storage spaces</h2>
         <Button

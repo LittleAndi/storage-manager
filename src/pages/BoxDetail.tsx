@@ -143,7 +143,7 @@ const BoxDetail: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setLightboxOpen(true)}
-                      className="group relative max-h-64 rounded border bg-white cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="group relative max-h-64 rounded border bg-card cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <img
                         src={thumbUrl}

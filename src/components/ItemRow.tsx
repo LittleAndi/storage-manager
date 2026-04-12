@@ -16,7 +16,7 @@ const ItemRow: React.FC<ItemRowProps> = ({ name, description, quantity, thumbnai
       <span className="font-medium">{name}</span>
       <span className="text-xs text-gray-500 ml-2">{description}</span>
     </div>
-    <span className="text-xs text-gray-400">Qty: {quantity}</span>
+    <span className="text-xs text-muted-foreground">Qty: {quantity}</span>
   </button>
 );
 

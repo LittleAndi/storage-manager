@@ -20,7 +20,7 @@ const Profile: React.FC = () => {
               </Avatar>
               <div>
                 <span className="block text-lg font-semibold">{user.full_name || user.email}</span>
-                <span className="block text-sm text-gray-500">{user.email}</span>
+                <span className="block text-sm text-muted-foreground">{user.email}</span>
               </div>
             </div>
             <div>
@@ -39,7 +39,7 @@ const Profile: React.FC = () => {
         </Card>
       ) : (
         <Card className="max-w-md mx-auto">
-          <CardContent className="p-6 text-center text-gray-500">Not logged in.</CardContent>
+          <CardContent className="p-6 text-center text-muted-foreground">Not logged in.</CardContent>
         </Card>
       )}
     </AppShell>

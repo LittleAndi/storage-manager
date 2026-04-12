@@ -74,8 +74,8 @@ const SpaceCard: React.FC<SpaceCardProps> = ({ name, location, memberCount, boxC
       ref={ref}
       role="button"
       tabIndex={0}
-      className={`relative group bg-white rounded shadow p-4 flex items-center cursor-pointer transition-colors ${
-        isShared ? "bg-indigo-50 dark:bg-indigo-900/20" : "bg-background hover:bg-accent/50"
+      className={`relative group rounded shadow p-4 flex items-center cursor-pointer transition-colors ${
+        isShared ? "bg-muted" : "bg-card hover:bg-accent/50"
       }`}
       onClick={onOpen}
       onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && onOpen) { e.preventDefault(); onOpen(); } }}

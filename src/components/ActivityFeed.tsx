@@ -15,7 +15,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => (
     {activities.map(a => (
       <li key={a.id} className="p-2">
         <span className="font-medium">{a.description}</span>
-        <span className="text-xs text-gray-400 ml-2">{a.timestamp}</span>
+        <span className="text-xs text-muted-foreground ml-2">{a.timestamp}</span>
       </li>
     ))}
   </ul>

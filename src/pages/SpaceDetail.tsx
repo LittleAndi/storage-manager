@@ -172,7 +172,7 @@ const SpaceDetail: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setLightboxOpen(true)}
-                className="group relative w-32 h-32 rounded mb-4 border bg-white cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="group relative w-32 h-32 rounded mb-4 border bg-card cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <img
                   src={thumbUrl}

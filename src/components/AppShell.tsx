@@ -51,14 +51,14 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     location.pathname === href || location.pathname.startsWith(href + "/");
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-background">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 z-50 bg-background text-foreground px-4 py-2 rounded shadow"
       >
         Skip to main content
       </a>
-      <header className="bg-gray-900 text-white p-4 flex items-center justify-between">
+      <header className="bg-sidebar text-sidebar-foreground p-4 flex items-center justify-between border-b border-sidebar-border">
         <span className="font-bold text-lg">Storage Manager</span>
         <div className="flex items-center gap-4">
           {user && (
@@ -142,7 +142,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
       </header>
       <div className="flex flex-1">
-        <aside className="hidden md:flex md:flex-col md:w-64 bg-white shadow-lg p-4">
+        <aside className="hidden md:flex md:flex-col md:w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-4">
           <nav>
             <ul className="space-y-2">
               {navLinks.map((link) => (
