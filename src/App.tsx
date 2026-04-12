@@ -1,18 +1,19 @@
-import React, { type JSX } from 'react';
+import React, { lazy, Suspense, type JSX } from 'react';
 import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './state/authStore';
-import GetStarted from './pages/GetStarted';
-import Spaces from './pages/Spaces';
-import CreateSpace from './pages/CreateSpace';
-import SpaceDetail from './pages/SpaceDetail';
-import CreateBox from './pages/CreateBox';
-import BoxDetail from './pages/BoxDetail';
-import AddItem from './pages/AddItem';
-import ItemDetail from './pages/ItemDetail';
-import Profile from './pages/Profile';
-import Auth from './pages/Auth';
-import InviteCollaborators from './pages/InviteCollaborators';
-import BulkOperations from './pages/BulkOperations';
+
+const GetStarted = lazy(() => import('./pages/GetStarted'));
+const Spaces = lazy(() => import('./pages/Spaces'));
+const CreateSpace = lazy(() => import('./pages/CreateSpace'));
+const SpaceDetail = lazy(() => import('./pages/SpaceDetail'));
+const CreateBox = lazy(() => import('./pages/CreateBox'));
+const BoxDetail = lazy(() => import('./pages/BoxDetail'));
+const AddItem = lazy(() => import('./pages/AddItem'));
+const ItemDetail = lazy(() => import('./pages/ItemDetail'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Auth = lazy(() => import('./pages/Auth'));
+const InviteCollaborators = lazy(() => import('./pages/InviteCollaborators'));
+const BulkOperations = lazy(() => import('./pages/BulkOperations'));
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -48,7 +49,8 @@ function App() {
   return (
     <>
       <Toaster />
-      <Routes>
+      <Suspense fallback={<div role="status" aria-live="polite" className="min-h-screen flex items-center justify-center text-xl">Loading...</div>}>
+        <Routes>
         <Route path="/auth/*" element={<Auth />} />
         <Route
           path="/*"
@@ -71,6 +73,7 @@ function App() {
           }
         />
       </Routes>
+      </Suspense>
     </>
   );
 }
