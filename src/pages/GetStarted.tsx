@@ -17,7 +17,7 @@ const GetStarted: React.FC = () => {
             View Spaces
           </Button>
           <Button
-            className="flex-1 py-8 text-lg rounded-xl shadow-md bg-green-600 hover:bg-green-700 text-white"
+            className="flex-1 py-8 text-lg rounded-xl shadow-md bg-primary hover:bg-primary/90 text-primary-foreground"
             onClick={() => navigate("/spaces/new")}
           >
             + Create New Space

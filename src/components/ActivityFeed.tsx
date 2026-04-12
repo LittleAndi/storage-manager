@@ -11,7 +11,7 @@ interface ActivityFeedProps {
 }
 
 const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => (
-  <ul className="divide-y divide-gray-200">
+  <ul className="divide-y divide-border">
     {activities.map(a => (
       <li key={a.id} className="p-2">
         <span className="font-medium">{a.description}</span>

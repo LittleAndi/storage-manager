@@ -130,7 +130,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({ name, location, memberCount, boxC
         <div className="flex items-center gap-2">
           {isShared && (
             <span
-              className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-medium text-white"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground"
               title={`Owned by ${ownerName || owner || "another user"}`}
             >
               <Users size={14} />

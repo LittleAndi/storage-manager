@@ -15,7 +15,7 @@ export const ImagePlaceholder: React.FC<ImagePlaceholderProps> = ({ className = 
   return (
     <div
       className={[
-        "bg-gray-200 text-gray-400 flex items-center justify-center overflow-hidden select-none",
+        "bg-muted text-muted-foreground flex items-center justify-center overflow-hidden select-none",
         square ? "aspect-square" : "",
         loading ? "animate-pulse" : "",
         className,

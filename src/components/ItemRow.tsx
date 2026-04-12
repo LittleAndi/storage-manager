@@ -14,7 +14,7 @@ const ItemRow: React.FC<ItemRowProps> = ({ name, description, quantity, thumbnai
     {thumbnailUrl && <img src={thumbnailUrl} alt={`${name} image`} className="w-8 h-8 rounded mr-2" />}
     <div className="flex-1">
       <span className="font-medium">{name}</span>
-      <span className="text-xs text-gray-500 ml-2">{description}</span>
+      <span className="text-xs text-muted-foreground ml-2">{description}</span>
     </div>
     <span className="text-xs text-muted-foreground">Qty: {quantity}</span>
   </button>
