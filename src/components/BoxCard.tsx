@@ -15,7 +15,7 @@ export interface BoxCardProps {
 }
 
 const BoxCard: React.FC<BoxCardProps> = ({ name, location, itemCount, thumbnailUrl, imageId, onOpen }) => {
-  const ref = useRef<HTMLDivElement | null>(null);
+  const ref = useRef<HTMLButtonElement | null>(null);
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resolvedUrl, setResolvedUrl] = useState<string | undefined>(() => (imageId ? getCachedImageUrl(imageId) || undefined : undefined));
