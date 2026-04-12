@@ -87,4 +87,4 @@ const BoxCard: React.FC<BoxCardProps> = ({ name, location, itemCount, thumbnailU
   );
 };
 
-export default BoxCard;
+export default React.memo(BoxCard);

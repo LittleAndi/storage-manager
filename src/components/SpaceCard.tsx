@@ -154,7 +154,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({ name, location, memberCount, boxC
           </div>
         )}
         {location && <p className="text-sm text-muted-foreground mt-1">{location}</p>}
-        <p className="text-xs text-gray-400 mt-1">Members: {memberCount ?? 0} {owner && (`| Owner: ${owner}`)}</p>
+        <p className="text-xs text-muted-foreground mt-1">Members: {memberCount ?? 0} {owner && (`| Owner: ${owner}`)}</p>
         {boxCount && boxCount > 0 && (
           <p className="hidden non-empty-hint-touch mt-1 text-[11px] text-muted-foreground">
             Remove boxes to delete.
@@ -165,4 +165,4 @@ const SpaceCard: React.FC<SpaceCardProps> = ({ name, location, memberCount, boxC
   );
 };
 
-export default SpaceCard;
+export default React.memo(SpaceCard);
