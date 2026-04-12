@@ -2,6 +2,7 @@ import React, { lazy, Suspense, type JSX } from 'react';
 import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './state/authStore';
 import AppSkeleton from './components/AppSkeleton';
+import { Toaster } from "@/components/ui/sonner";
 
 const GetStarted = lazy(() => import('./pages/GetStarted'));
 const Spaces = lazy(() => import('./pages/Spaces'));
@@ -15,9 +16,6 @@ const Profile = lazy(() => import('./pages/Profile'));
 const Auth = lazy(() => import('./pages/Auth'));
 const InviteCollaborators = lazy(() => import('./pages/InviteCollaborators'));
 const BulkOperations = lazy(() => import('./pages/BulkOperations'));
-
-import { Toaster } from "@/components/ui/sonner";
-
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const user = useAuthStore((state) => state.user);
