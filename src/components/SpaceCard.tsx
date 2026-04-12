@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { useSpacesStore } from "@/state/spacesStore";
 import { Button } from "@/components/ui/button";
 import { TrashIcon } from "@/components/ui/trash-icon";
-import { toast } from "sonner";
 import { resolveImageUrl, getCachedImageUrl } from "@/lib/imageUrls";
 
 export interface SpaceCardProps {
@@ -72,11 +71,14 @@ const SpaceCard: React.FC<SpaceCardProps> = ({ name, location, memberCount, boxC
 
   return (
     <div
-  ref={ref}
+      ref={ref}
+      role="button"
+      tabIndex={0}
       className={`relative group bg-white rounded shadow p-4 flex items-center cursor-pointer transition-colors ${
         isShared ? "bg-indigo-50 dark:bg-indigo-900/20" : "bg-background hover:bg-accent/50"
       }`}
       onClick={onOpen}
+      onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && onOpen) { e.preventDefault(); onOpen(); } }}
       aria-label={`Open space ${name}`}
     >
       {!isShared && (
@@ -97,14 +99,10 @@ const SpaceCard: React.FC<SpaceCardProps> = ({ name, location, memberCount, boxC
         ) : (
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              // show toast or inline state
-              toast.info("Remove all boxes before deleting this space.");
-            }}
-            className="absolute top-2 right-2 h-7 w-7 p-0 flex items-center justify-center rounded border border-dashed text-muted-foreground text-[10px]"
+            className="absolute top-2 right-2 h-7 w-7 p-0 flex items-center justify-center rounded border border-dashed text-muted-foreground text-[10px] opacity-40 cursor-not-allowed"
             aria-label="Cannot delete space (contains boxes)"
-            aria-disabled="true"
+            title="Remove all boxes before deleting this space"
+            disabled
           >
             <TrashIcon size={14} aria-hidden="true" />
           </button>

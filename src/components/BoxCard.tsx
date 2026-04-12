@@ -62,9 +62,10 @@ const BoxCard: React.FC<BoxCardProps> = ({ name, location, itemCount, thumbnailU
   const finalUrl = thumbnailUrl || resolvedUrl;
 
   return (
-    <div
+    <button
+      type="button"
       ref={ref}
-      className="bg-white rounded shadow p-4 flex items-center cursor-pointer"
+      className="bg-white rounded shadow p-4 flex items-center cursor-pointer w-full text-left"
       onClick={onOpen}
       aria-label={`Open box ${name}`}
     >
@@ -82,7 +83,7 @@ const BoxCard: React.FC<BoxCardProps> = ({ name, location, itemCount, thumbnailU
           <p className="text-xs text-gray-400">Items: {itemCount}</p>
         )}
       </div>
-    </div>
+    </button>
   );
 };
 
