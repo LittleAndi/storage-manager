@@ -31,7 +31,7 @@ export function Root() {
   }, [setUser, setToken]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-xl">Loading...</div>;
+    return <div role="status" aria-live="polite" className="min-h-screen flex items-center justify-center text-xl">Loading...</div>;
   }
   return <App />;
 }
