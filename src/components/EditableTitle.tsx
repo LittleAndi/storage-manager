@@ -33,6 +33,7 @@ const EditableTitle: React.FC<EditableTitleProps> = ({ value, canEdit, onSave, c
             value={draft}
             onChange={e => setDraft(e.target.value)}
             autoFocus
+            aria-label={`Edit title: ${value}`}
             className="border rounded px-2 py-1 text-xl font-semibold"
             onKeyDown={e => {
               if (e.key === "Enter") handleSave();

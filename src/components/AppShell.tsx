@@ -52,6 +52,12 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 z-50 bg-background text-foreground px-4 py-2 rounded shadow"
+      >
+        Skip to main content
+      </a>
       <header className="bg-gray-900 text-white p-4 flex items-center justify-between">
         <span className="font-bold text-lg">Storage Manager</span>
         <div className="flex items-center gap-4">
@@ -181,7 +187,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </ul>
           </nav>
         </aside>
-        <main className="flex-1 p-4">{children}</main>
+        <main id="main-content" className="flex-1 p-4">{children}</main>
       </div>
     </div>
   );
