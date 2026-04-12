@@ -3,7 +3,7 @@ import AppShell from "../components/AppShell";
 
 const InviteCollaborators: React.FC = () => (
   <AppShell>
-    <h1 className="text-2xl font-bold mb-4">Invite Collaborators</h1>
+    <h1 className="text-2xl font-bold mb-4 text-balance">Invite Collaborators</h1>
     {/* TODO: Modal for inviting users with permissions dropdown */}
   </AppShell>
 );

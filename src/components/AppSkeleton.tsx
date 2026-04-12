@@ -9,7 +9,7 @@ const AppSkeleton: React.FC = () => (
     role="status"
     aria-live="polite"
     aria-label="Loading Storage Manager"
-    className="min-h-screen flex flex-col bg-background"
+    className="min-h-dvh flex flex-col bg-background"
   >
     {/* nav bar */}
     <header className="h-14 border-b border-border flex items-center px-6 gap-4 shrink-0">

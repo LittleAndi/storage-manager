@@ -76,7 +76,7 @@ const BoxDetail: React.FC = () => {
   if (!box) {
     return (
       <AppShell>
-        <h1 className="text-2xl font-bold mb-4">Box not found</h1>
+        <h1 className="text-2xl font-bold mb-4 text-balance">Box not found</h1>
       </AppShell>
     );
   }

@@ -74,14 +74,14 @@ const Spaces: React.FC = () => {
 
   return (
     <AppShell>
-      <h1 className="text-2xl font-bold mb-4">Storage Spaces</h1>
+      <h1 className="text-2xl font-bold mb-4 text-balance">Storage Spaces</h1>
       <div className="flex items-center gap-4 mb-4">
         <Button onClick={() => navigate('/spaces/new')} className="w-fit">
           + New Space
         </Button>
         {locations.length > 0 && (
           <Select value={locationFilter} onValueChange={setLocationFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-45">
               <SelectValue placeholder="All Locations" />
             </SelectTrigger>
             <SelectContent>

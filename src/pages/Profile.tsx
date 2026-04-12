@@ -9,7 +9,7 @@ const Profile: React.FC = () => {
   const user = useAuthStore((state) => state.user);
   return (
     <AppShell>
-      <h1 className="text-2xl font-bold mb-4">User Profile</h1>
+      <h1 className="text-2xl font-bold mb-4 text-balance">User Profile</h1>
       {user ? (
         <Card className="w-full max-w-md mb-4">
           <CardContent className="p-6">

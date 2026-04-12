@@ -94,7 +94,7 @@ const SpaceDetail: React.FC = () => {
   if (!space) {
     return (
       <AppShell>
-        <h1 className="text-2xl font-bold mb-4">Space not found</h1>
+        <h1 className="text-2xl font-bold mb-4 text-balance">Space not found</h1>
       </AppShell>
     );
   }

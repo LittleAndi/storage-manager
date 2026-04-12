@@ -70,7 +70,7 @@ const CreateSpace: React.FC = () => {
 
   return (
     <AppShell>
-      <h1 className="text-2xl font-bold mb-4">Create Storage Space</h1>
+      <h1 className="text-2xl font-bold mb-4 text-balance">Create Storage Space</h1>
       <Card className="w-full max-w-md mb-4">
         <CardHeader>
           <CardTitle>New Storage Space</CardTitle>

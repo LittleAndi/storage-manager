@@ -53,7 +53,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     location.pathname === href || location.pathname.startsWith(href + "/");
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-dvh flex flex-col bg-background">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 z-50 bg-background text-foreground px-4 py-2 rounded shadow"
