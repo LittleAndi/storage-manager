@@ -1,4 +1,5 @@
 import React from "react";
+import { Sun, Moon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -24,6 +25,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "../state/authStore";
 import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
+import { useTheme } from "../hooks/useTheme";
 
 const navLinks = [
   { href: "/", label: "Get Started" },
@@ -34,6 +36,7 @@ const navLinks = [
 
 const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
+  const { theme, toggleTheme } = useTheme();
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const setToken = useAuthStore((state) => state.setToken);
@@ -61,6 +64,16 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <header className="bg-sidebar text-sidebar-foreground p-4 flex items-center justify-between border-b border-sidebar-border">
         <span className="font-bold text-lg">Storage Manager</span>
         <div className="flex items-center gap-4">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            className="h-8 w-8 p-0"
+          >
+            {theme === "dark" ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
+          </Button>
           {user && (
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
