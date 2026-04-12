@@ -67,10 +67,9 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <Button
             type="button"
             variant="ghost"
-            size="sm"
             onClick={toggleTheme}
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            className="h-8 w-8 p-0"
+            className="h-10 w-10 p-0"
           >
             {theme === "dark" ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
           </Button>

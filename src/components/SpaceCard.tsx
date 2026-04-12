@@ -87,7 +87,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({ name, location, memberCount, boxC
             type="button"
             variant="destructive"
             size="sm"
-            className="absolute top-2 right-2 h-7 w-7 p-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 transition-opacity"
+            className="absolute top-2 right-2 h-9 w-9 p-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 transition-opacity"
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
@@ -99,7 +99,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({ name, location, memberCount, boxC
         ) : (
           <button
             type="button"
-            className="absolute top-2 right-2 h-7 w-7 p-0 flex items-center justify-center rounded border border-dashed text-muted-foreground text-[10px] opacity-40 cursor-not-allowed"
+            className="absolute top-2 right-2 h-9 w-9 p-0 flex items-center justify-center rounded border border-dashed text-muted-foreground text-[10px] opacity-40 cursor-not-allowed"
             aria-label="Cannot delete space (contains boxes)"
             title="Remove all boxes before deleting this space"
             disabled

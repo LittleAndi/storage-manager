@@ -47,7 +47,11 @@ const EditableTitle: React.FC<EditableTitleProps> = ({ value, canEdit, onSave, c
         <h1
           className="text-2xl font-bold cursor-pointer group inline-flex items-center"
           onClick={() => setEditing(true)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditing(true); } }}
+          tabIndex={0}
+          role="button"
           title="Click to edit title"
+          aria-label={`Edit title: ${value}`}
         >
           {value}
           <span className="ml-2 text-xs opacity-0 group-hover:opacity-70">Edit</span>
