@@ -63,3 +63,4 @@ dist-ssr
 *.sln
 *.sw?
 .agents/
+.github/skills/impeccable
