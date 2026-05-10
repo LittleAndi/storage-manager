@@ -69,7 +69,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
       className="relative group flex flex-col rounded-xl border border-border bg-card overflow-hidden cursor-pointer transition-all hover:border-primary/30 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring outline-none"
       onClick={onOpen}
       tabIndex={0}
-      onKeyDown={(e) => e.key === "Enter" && onOpen?.()}
+      onKeyDown={(e) => e.target === e.currentTarget && (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen?.())}
       aria-label={`Open space ${name}`}
       role="button"
     >

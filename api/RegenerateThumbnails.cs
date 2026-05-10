@@ -33,8 +33,7 @@ public class RegenerateThumbnails(ILogger<RegenerateThumbnails> log)
             return new ObjectResult(new { error = "ADMIN_KEY not configured" })
             { StatusCode = 500 };
         }
-        string? providedKey = req.Headers["X-Admin-Key"].FirstOrDefault()
-                              ?? req.Query["key"].FirstOrDefault();
+        string? providedKey = req.Headers["X-Admin-Key"].FirstOrDefault();
         if (providedKey != expectedKey)
             return new UnauthorizedObjectResult(new { error = "Invalid or missing X-Admin-Key header" });
 
@@ -93,6 +92,26 @@ public class RegenerateThumbnails(ILogger<RegenerateThumbnails> log)
                 ms.Position = 0;
 
                 var thumbClient = containerClient.GetBlobClient(thumbnailName);
+
+                // Fetch existing thumbnail metadata so we preserve keys set by ConfirmImage
+                // (e.g. status=confirmed, space_id, box_id). Merge with our fixed keys.
+                var mergedMeta = new Dictionary<string, string>
+                {
+                    ["derived_from"] = originalName,
+                    ["type"] = "thumbnail",
+                    ["regenerated"] = DateTimeOffset.UtcNow.ToString("O"),
+                };
+                if (await thumbClient.ExistsAsync())
+                {
+                    var props = await thumbClient.GetPropertiesAsync();
+                    foreach (var kv in props.Value.Metadata)
+                        mergedMeta.TryAdd(kv.Key, kv.Value); // existing keys win for unknown fields
+                    // Ensure our controlled keys always reflect current truth
+                    mergedMeta["derived_from"] = originalName;
+                    mergedMeta["type"] = "thumbnail";
+                    mergedMeta["regenerated"] = DateTimeOffset.UtcNow.ToString("O");
+                }
+
                 await thumbClient.UploadAsync(ms, new BlobUploadOptions
                 {
                     HttpHeaders = new BlobHttpHeaders
@@ -100,13 +119,7 @@ public class RegenerateThumbnails(ILogger<RegenerateThumbnails> log)
                         ContentType = "image/webp",
                         CacheControl = "public, max-age=31536000",
                     },
-                    // Preserve existing metadata but ensure type tag is correct
-                    Metadata = new Dictionary<string, string>
-                    {
-                        ["derived_from"] = originalName,
-                        ["type"] = "thumbnail",
-                        ["regenerated"] = DateTimeOffset.UtcNow.ToString("O"),
-                    },
+                    Metadata = mergedMeta,
                 });
 
                 log.LogInformation("Regenerated thumbnail for {OriginalName}", originalName);

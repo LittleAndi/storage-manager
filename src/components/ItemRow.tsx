@@ -11,10 +11,11 @@ export interface ItemRowProps {
 
 const ItemRow: React.FC<ItemRowProps> = ({ name, description, quantity, thumbnailUrl, onOpen }) => (
   <li
+    role="button"
     className="flex items-center gap-3 px-2 py-2.5 rounded-lg hover:bg-accent cursor-pointer transition-colors group"
     onClick={onOpen}
     tabIndex={0}
-    onKeyDown={(e) => e.key === "Enter" && onOpen?.()}
+    onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen?.())}
     aria-label={`Open item ${name}`}
   >
     {/* Thumbnail */}

@@ -1,7 +1,7 @@
 import React from "react";
 import AppShell from "../components/AppShell";
 import { SpacesSection } from "../components/SpacesSection";
-import { resolveImageUrl, getCachedImageUrl } from "@/lib/imageUrls";
+import { getCachedImageUrl } from "@/lib/imageUrls";
 import { useSpacesStore } from "@/state/spacesStore";
 import { useAuthStore } from "@/state/authStore";
 import { Button } from "@/components/ui/button";
@@ -33,10 +33,8 @@ const Spaces: React.FC = () => {
     ? spaces.filter((s) => s.location === locationFilter)
     : spaces;
 
-  React.useEffect(() => {
-    const ids = filteredSpaces.map(s => s.image_id).filter(Boolean) as string[];
-    ids.forEach(id => resolveImageUrl(id));
-  }, [filteredSpaces]);
+  // Image URLs are resolved lazily by IntersectionObserver inside each SpaceCard.
+  // No eager prefetch here to avoid bursting /api/images/urls for the full list.
 
   const { ownedSpaces, sharedSpaces } = React.useMemo(() => {
     const owned: typeof spaces = [];
