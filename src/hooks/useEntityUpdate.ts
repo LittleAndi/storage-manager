@@ -31,7 +31,7 @@ export function useEntityUpdate<TPatch extends Record<string, unknown>>(
             const dbPatch = mapPatchToDb ? mapPatchToDb(patch) : patch;
             if (kind === "space") {
                 const { error: err } = await supabase.from("spaces").update(
-                    dbPatch,
+                    dbPatch as Partial<Omit<Space, "boxCount">>,
                 ).eq("id", entity.id);
                 if (err) throw err;
                 const updatedBase: Space = {
@@ -48,7 +48,7 @@ export function useEntityUpdate<TPatch extends Record<string, unknown>>(
                 onSuccess?.(updated);
             } else {
                 const { error: err } = await supabase.from("boxes").update(
-                    dbPatch,
+                    dbPatch as Partial<Box>,
                 ).eq("id", entity.id);
                 if (err) throw err;
                 const updatedBase: Box = {
