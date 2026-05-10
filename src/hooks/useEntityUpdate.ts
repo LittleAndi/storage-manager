@@ -3,6 +3,10 @@ import { useSpacesStore } from "@/state/spacesStore";
 import { useBoxesStore } from "@/state/boxesStore";
 import { supabase } from "@/supabaseClient";
 import type { Box, Space } from "@/types/entities";
+import type { Database } from "@/types/database.types";
+
+type TablesUpdate<T extends keyof Database["public"]["Tables"]> =
+    Database["public"]["Tables"][T]["Update"];
 
 type Kind = "space" | "box";
 
@@ -31,7 +35,7 @@ export function useEntityUpdate<TPatch extends Record<string, unknown>>(
             const dbPatch = mapPatchToDb ? mapPatchToDb(patch) : patch;
             if (kind === "space") {
                 const { error: err } = await supabase.from("spaces").update(
-                    dbPatch,
+                    dbPatch as TablesUpdate<"spaces">,
                 ).eq("id", entity.id);
                 if (err) throw err;
                 const updatedBase: Space = {
@@ -48,7 +52,7 @@ export function useEntityUpdate<TPatch extends Record<string, unknown>>(
                 onSuccess?.(updated);
             } else {
                 const { error: err } = await supabase.from("boxes").update(
-                    dbPatch,
+                    dbPatch as TablesUpdate<"boxes">,
                 ).eq("id", entity.id);
                 if (err) throw err;
                 const updatedBase: Box = {

@@ -6,27 +6,24 @@ export interface SpacesSectionProps {
   emptyMessage?: string;
 }
 
-/**
- * Grouped list of spaces under a labeled section with a count badge.
- */
 export function SpacesSection({ title, spaces, emptyMessage }: SpacesSectionProps) {
   if (!spaces.length) {
     if (!emptyMessage) return null;
     return (
-      <section className="space-y-2">
-        <h3 className="sticky top-0 z-10 bg-background/80 py-1 text-xs font-semibold uppercase tracking-wide backdrop-blur">
-          {title} <span className="text-muted-foreground">(0)</span>
+      <section>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+          {title} <span className="opacity-60">(0)</span>
         </h3>
-        <div className="text-sm text-muted-foreground italic px-2">{emptyMessage}</div>
+        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
       </section>
     );
   }
   return (
-    <section className="space-y-2">
-      <h3 className="sticky top-0 z-10 bg-background/80 py-1 text-xs font-semibold uppercase tracking-wide backdrop-blur flex items-center gap-2">
-        {title} <span className="text-muted-foreground">({spaces.length})</span>
+    <section>
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+        {title} <span className="opacity-60">({spaces.length})</span>
       </h3>
-      <div className="grid gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {spaces.map((s) => (
           <SpaceCard key={s.id} {...s} />
         ))}

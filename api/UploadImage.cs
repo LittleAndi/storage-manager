@@ -98,12 +98,13 @@ public class UploadImage(ILogger<UploadImage> log)
 
             log.LogInformation("Uploaded original (converted WebP) image {OriginalBlob}", originalBlobName);
 
-            // Create thumbnail (square crop) then encode as WebP
-            const int thumbSize = 150;
+            // Create thumbnail (4:3 landscape crop) then encode as WebP.
+            // 480×360 covers a 4-column card grid on a 1440px screen at 1× and a
+            // 2-column grid on a 375px mobile at 2× (Retina), without being wasteful.
             using var thumbnailImage = image.Clone(ctx =>
                 ctx.Resize(new ResizeOptions
                 {
-                    Size = new Size(thumbSize, thumbSize),
+                    Size = new Size(480, 360),
                     Mode = ResizeMode.Crop
                 }));
 

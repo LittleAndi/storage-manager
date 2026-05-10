@@ -173,12 +173,18 @@ const BoxDetail: React.FC = () => {
               <ImagePlaceholder className="h-40 w-40 rounded" />
             )}
           </div>
-          <div className="mb-2"><span className="font-semibold">Location:</span> {box.location || <span className="text-muted-foreground">(none)</span>}</div>
-          <div className="mb-2"><span className="font-semibold">Content:</span><br />
-            <div className="whitespace-pre-line border rounded p-2 bg-muted">{box.content || <span className="text-muted-foreground">(none)</span>}</div>
+          <div className="mb-4 text-sm">
+            <span className="text-muted-foreground">Location:</span>{" "}
+            {box.location || <span className="text-muted-foreground/60">(none)</span>}
           </div>
-          <div className="mb-2"><span className="font-semibold">Created:</span> {box.created_at ? new Date(box.created_at).toLocaleString() : <span className="text-muted-foreground">(unknown)</span>}</div>
-          <div className="mb-2"><span className="font-semibold">Modified:</span> {box.modified_at ? new Date(box.modified_at).toLocaleString() : <span className="text-muted-foreground">(unknown)</span>}</div>
+          <div className="mb-4">
+            <p className="text-muted-foreground text-sm mb-1">Content</p>
+            <div className="whitespace-pre-line rounded-lg border border-border bg-muted/40 p-3 text-sm">{box.content || <span className="text-muted-foreground/60">(none)</span>}</div>
+          </div>
+          <div className="flex gap-6 text-xs text-muted-foreground">
+            <span>Created: {box.created_at ? new Date(box.created_at).toLocaleString() : <span className="opacity-60">(unknown)</span>}</span>
+            <span>Modified: {box.modified_at ? new Date(box.modified_at).toLocaleString() : <span className="opacity-60">(unknown)</span>}</span>
+          </div>
         </div>
       )}
       <EditBoxModal open={editOpen} onClose={() => setEditOpen(false)} box={box} />

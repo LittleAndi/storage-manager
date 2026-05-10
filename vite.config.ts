@@ -6,6 +6,16 @@ import path from "path";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    proxy: {
+      // Proxy Azure Functions API calls to the local Functions runtime.
+      // Run: cd api && func start  (or use: swa start)
+      "/api": {
+        target: "http://localhost:7071",
+        changeOrigin: true,
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
