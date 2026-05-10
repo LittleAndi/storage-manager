@@ -1,188 +1,110 @@
 import React from "react";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button-variants";
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetTitle,
-  SheetDescription,
-  SheetHeader,
-} from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "sonner";
-import { useAuthStore } from "../state/authStore";
-import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
+import { useAuthStore } from "../state/authStore";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+const IconSpaces = () => (
+  <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 8h14M5 8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v.286A2 2 0 0 1 19 8m-14 0v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8M10 12h4" />
+  </svg>
+);
+
+const IconProfile = () => (
+  <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 20c0-3.866 3.582-7 8-7s8 3.134 8 7" />
+  </svg>
+);
 
 const navLinks = [
-  { href: "/", label: "Get Started" },
-  { href: "/spaces", label: "Spaces" },
-  { href: "/profile", label: "Profile" },
-  { href: "/bulk", label: "Bulk Operations" },
+  { href: "/spaces", label: "Spaces", icon: <IconSpaces /> },
+  { href: "/profile", label: "Profile", icon: <IconProfile /> },
 ];
 
 const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
   const user = useAuthStore((state) => state.user);
-  const setUser = useAuthStore((state) => state.setUser);
-  const setToken = useAuthStore((state) => state.setToken);
   const location = useLocation();
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setToken(null);
-    toast.success("Logged out successfully");
-    setLogoutDialogOpen(false);
-  };
-
   const isActive = (href: string) =>
-    location.pathname === href || location.pathname.startsWith(href + "/");
+    href === "/" ? location.pathname === "/" : location.pathname.startsWith(href);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <header className="bg-gray-900 text-white p-4 flex items-center justify-between">
-        <span className="font-bold text-lg">Storage Manager</span>
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Top bar */}
+      <header className="sticky top-0 z-40 bg-card border-b border-border">
+        <div className="flex items-center h-14 px-4 gap-3">
+          <Link to="/spaces" className="font-semibold text-[15px] tracking-tight text-primary flex-1">
+            Storage Manager
+          </Link>
           {user && (
-            <div className="flex items-center gap-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage
-                  src={user.avatar_url || undefined}
-                  alt={user.full_name || user.email}
-                />
-                <AvatarFallback>
+            <Link to="/profile" aria-label="Your profile" className="flex items-center gap-2">
+              <span className="text-sm text-foreground/60 hidden sm:inline truncate max-w-[140px]">
+                {user.full_name || user.email}
+              </span>
+              <Avatar className="h-8 w-8 shrink-0">
+                <AvatarImage src={user.avatar_url || undefined} alt={user.full_name || user.email} />
+                <AvatarFallback className="text-xs bg-primary/10 text-primary">
                   {(user.full_name || user.email)?.[0]?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span
-                className="text-sm font-semibold"
-                aria-label="Logged in user name"
-              >
-                {user.full_name || user.email}
-              </span>
-            </div>
+            </Link>
           )}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button
-                className="md:hidden"
-                aria-label="Open navigation menu"
-                variant="ghost"
-              >
-                <svg
-                  width="24"
-                  height="24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="feather feather-menu"
-                >
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="18" x2="21" y2="18" />
-                </svg>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left">
-              <SheetHeader>
-                <SheetTitle className="sr-only">Menu</SheetTitle>
-                <SheetDescription className="sr-only">
-                  Storage Manager navigation
-                </SheetDescription>
-              </SheetHeader>
-              <nav className="p-4">
-                <ul className="space-y-2">
-                  {navLinks.map((link) => (
-                    <li key={link.href}>
-                      <Button
-                        asChild
-                        variant={isActive(link.href) ? "secondary" : "ghost"}
-                        className="w-full justify-start"
-                      >
-                        <Link to={link.href}>{link.label}</Link>
-                      </Button>
-                    </li>
-                  ))}
-                  {user && (
-                    <li>
-                      <Button
-                        onClick={() => setLogoutDialogOpen(true)}
-                        aria-label="Logout"
-                        variant="destructive"
-                        className="w-full mt-8"
-                      >
-                        Logout
-                      </Button>
-                    </li>
-                  )}
-                </ul>
-              </nav>
-            </SheetContent>
-          </Sheet>
         </div>
       </header>
+
+      {/* Layout body */}
       <div className="flex flex-1">
-        <aside className="hidden md:flex md:flex-col md:w-64 bg-white shadow-lg p-4">
-          <nav>
-            <ul className="space-y-2">
-              {navLinks.map((link) => (
-                <li key={link.href}>
-                  <Button
-                    asChild
-                    variant={isActive(link.href) ? "secondary" : "ghost"}
-                    className="w-full justify-start"
-                  >
-                    <Link to={link.href}>{link.label}</Link>
-                  </Button>
-                </li>
-              ))}
-              {user && (
-                <li>
-                  <Button
-                    onClick={() => setLogoutDialogOpen(true)}
-                    aria-label="Logout"
-                    variant="destructive"
-                    className="w-full mt-8"
-                  >
-                    Logout
-                  </Button>
-                  <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm logout</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to log out?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={handleLogout}>
-                          Logout
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </li>
-              )}
-            </ul>
+        {/* Desktop sidebar */}
+        <aside className="hidden md:flex md:flex-col md:w-52 md:shrink-0 bg-sidebar border-r border-sidebar-border">
+          <nav className="p-3 flex flex-col gap-0.5" aria-label="Main navigation">
+            {navLinks.map((link) => {
+              const active = isActive(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-primary/10 text-primary"
+                      : "text-foreground/65 hover:bg-accent hover:text-foreground"
+                  }`}
+                >
+                  {link.icon}
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
         </aside>
-        <main className="flex-1 p-4 md:ml-64">{children}</main>
+
+        {/* Main content */}
+        <main className="flex-1 min-w-0 pb-20 md:pb-0">
+          <div className="max-w-4xl mx-auto px-4 py-6">{children}</div>
+        </main>
       </div>
+
+      {/* Mobile bottom nav */}
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border flex items-stretch"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        aria-label="Mobile navigation"
+      >
+        {navLinks.map((link) => {
+          const active = isActive(link.href);
+          return (
+            <Link
+              key={link.href}
+              to={link.href}
+              className={`flex flex-col items-center justify-center gap-1 flex-1 h-16 text-[10px] font-medium transition-colors ${
+                active ? "text-primary" : "text-foreground/45"
+              }`}
+            >
+              {link.icon}
+              {link.label}
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 };

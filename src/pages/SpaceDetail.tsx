@@ -160,9 +160,9 @@ const SpaceDetail: React.FC = () => {
           </div>
         )}
       </div>
-      <div className="mb-2 text-muted-foreground">Location: {space.location}</div>
-      <div className="mb-2">
-        <h2 className="text-sm font-semibold text-muted-foreground mb-1">Members</h2>
+      <div className="mb-4 text-sm text-muted-foreground">{space.location}</div>
+      <div className="mb-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Members</p>
         <MemberList spaceId={space.id} />
       </div>
       {space.image_id && (
@@ -241,11 +241,11 @@ const SpaceDetail: React.FC = () => {
       
       {!showLabelSheet ? (
         <div className="mt-6">
-          <h2 className="text-lg font-semibold mb-2">Boxes</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Boxes</h2>
           {boxes.length === 0 ? (
             <div className="text-muted-foreground">No boxes yet.</div>
           ) : (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
               {boxes.map(box => (
                 <BoxCard
                   key={box.id}
