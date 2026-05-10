@@ -37,6 +37,26 @@ To add more backend features (database, storage, etc.), use Supabase client APIs
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+### Local development with Azure Functions
+
+The app uses Azure Functions (`api/`) for image handling. During local development, Vite proxies `/api/*` to the Azure Functions runtime on port 7071. Start both in separate terminals:
+
+```bash
+# Terminal 1: Azure Functions
+cd api && func start
+
+# Terminal 2: Vite dev server
+npm run dev
+```
+
+Alternatively, use the [Azure Static Web Apps CLI](https://azure.github.io/static-web-apps-cli/) which starts both together:
+
+```bash
+swa start
+```
+
+Without the Functions runtime running, image uploads and image URL resolution will fail silently and cards will show placeholder icons.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
@@ -102,11 +122,11 @@ Setting the form field to empty triggers a patch with `image_id: null`. The hook
 
 ### Caching Model
 
-| Layer | Purpose | Scope |
-|-------|---------|-------|
-| In-memory map (`imageUrls.ts`) | Fast repeat access | Session |
-| In-flight map | Prevent duplicate network calls for same id(s) | Request window |
-| Zustand store `imageUrls` maps | Rehydrate between navigations (lightweight) | Session/localStorage |
+| Layer                          | Purpose                                        | Scope                |
+| ------------------------------ | ---------------------------------------------- | -------------------- |
+| In-memory map (`imageUrls.ts`) | Fast repeat access                             | Session              |
+| In-flight map                  | Prevent duplicate network calls for same id(s) | Request window       |
+| Zustand store `imageUrls` maps | Rehydrate between navigations (lightweight)    | Session/localStorage |
 
 ### Error / Edge Handling
 
@@ -125,7 +145,6 @@ Image logic is tested at multiple layers:
 - Integration: `imageClear.test.tsx` ensures nulling an image propagates correctly.
 
 When extending the image system (e.g., adding drag & drop or alt text editing), prefer adding a new focused test file alongside existing ones.
-
 
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
