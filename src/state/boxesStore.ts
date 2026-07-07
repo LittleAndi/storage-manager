@@ -94,7 +94,7 @@ export const useBoxesStore = create<BoxesState>((set, get) => ({
             ),
         }),
     removeBox: async (id) => {
-        const target = get().boxes.find(b => b.id === id);
+        const target = get().boxes.find((b) => b.id === id);
         const imageIds = normalizeImageIds(target?.image_ids, target?.image_id);
         const { error } = await supabase.from("boxes").delete().eq("id", id);
         if (error) {

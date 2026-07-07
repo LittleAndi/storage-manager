@@ -40,12 +40,18 @@ export function useEntityUpdate<TPatch extends Record<string, unknown>>(
                     dbPatch as TablesUpdate<"spaces">,
                 ).eq("id", entity.id);
                 if (err) throw err;
-                const entityImageIds = normalizeImageIds(entity.image_ids, entity.image_id);
-                const patchHasImages = Object.prototype.hasOwnProperty.call(patch, "image_ids") || Object.prototype.hasOwnProperty.call(patch, "image_id");
+                const entityImageIds = normalizeImageIds(
+                    entity.image_ids,
+                    entity.image_id,
+                );
+                const patchHasImages =
+                    Object.prototype.hasOwnProperty.call(patch, "image_ids") ||
+                    Object.prototype.hasOwnProperty.call(patch, "image_id");
                 const nextImageIds = patchHasImages
                     ? normalizeImageIds(
                         (patch as { image_ids?: string[] }).image_ids,
-                        (patch as { image_id?: string | null }).image_id ?? null,
+                        (patch as { image_id?: string | null }).image_id ??
+                            null,
                     )
                     : entityImageIds;
                 const updatedBase: Space = {
@@ -53,11 +59,17 @@ export function useEntityUpdate<TPatch extends Record<string, unknown>>(
                     ...patch,
                 } as Space;
                 const updated: Space = patchHasImages
-                    ? { ...updatedBase, image_id: nextImageIds[0], image_ids: nextImageIds }
+                    ? {
+                        ...updatedBase,
+                        image_id: nextImageIds[0],
+                        image_ids: nextImageIds,
+                    }
                     : updatedBase;
                 updateSpace(updated);
                 onSuccess?.(updated);
-                const removedImageIds = entityImageIds.filter((id) => !nextImageIds.includes(id));
+                const removedImageIds = entityImageIds.filter((id) =>
+                    !nextImageIds.includes(id)
+                );
                 if (removedImageIds.length) {
                     void deleteImages(removedImageIds);
                 }
@@ -66,12 +78,18 @@ export function useEntityUpdate<TPatch extends Record<string, unknown>>(
                     dbPatch as TablesUpdate<"boxes">,
                 ).eq("id", entity.id);
                 if (err) throw err;
-                const entityImageIds = normalizeImageIds(entity.image_ids, entity.image_id);
-                const patchHasImages = Object.prototype.hasOwnProperty.call(patch, "image_ids") || Object.prototype.hasOwnProperty.call(patch, "image_id");
+                const entityImageIds = normalizeImageIds(
+                    entity.image_ids,
+                    entity.image_id,
+                );
+                const patchHasImages =
+                    Object.prototype.hasOwnProperty.call(patch, "image_ids") ||
+                    Object.prototype.hasOwnProperty.call(patch, "image_id");
                 const nextImageIds = patchHasImages
                     ? normalizeImageIds(
                         (patch as { image_ids?: string[] }).image_ids,
-                        (patch as { image_id?: string | null }).image_id ?? null,
+                        (patch as { image_id?: string | null }).image_id ??
+                            null,
                     )
                     : entityImageIds;
                 const updatedBase: Box = {
@@ -79,11 +97,17 @@ export function useEntityUpdate<TPatch extends Record<string, unknown>>(
                     ...patch,
                 } as Box;
                 const updated: Box = patchHasImages
-                    ? { ...updatedBase, image_id: nextImageIds[0], image_ids: nextImageIds }
+                    ? {
+                        ...updatedBase,
+                        image_id: nextImageIds[0],
+                        image_ids: nextImageIds,
+                    }
                     : updatedBase;
                 updateBox(updated);
                 onSuccess?.(updated);
-                const removedImageIds = entityImageIds.filter((id) => !nextImageIds.includes(id));
+                const removedImageIds = entityImageIds.filter((id) =>
+                    !nextImageIds.includes(id)
+                );
                 if (removedImageIds.length) {
                     void deleteImages(removedImageIds);
                 }
