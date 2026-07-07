@@ -8,6 +8,7 @@ CREATE TABLE spaces (
   location text,
   owner_id uuid not null default auth.uid (),
   thumbnail_url text,
+  image_ids uuid[] DEFAULT '{}'::uuid[],
   created_at timestamptz DEFAULT now(),
   modified_at timestamptz DEFAULT now(),
   owner text null,
@@ -22,6 +23,7 @@ CREATE TABLE boxes (
   location text,
   content text,
   image_id uuid, -- nullable reference to uploaded image (signed URL resolved via API)
+  image_ids uuid[] DEFAULT '{}'::uuid[],
   created_at timestamptz DEFAULT now(),
   modified_at timestamptz DEFAULT now()
 );

@@ -4,6 +4,8 @@ import type { NewSpace, Space } from "@/types/entities";
 import { newSpaceToDbSpace } from "@/lib/mappers";
 import { dbSpaceToAppSpace } from "@/lib/mappers";
 import type { Database } from "@/types/database.types";
+import { confirmImages, deleteImages } from "@/lib/imageUpload";
+import { normalizeImageIds } from "@/lib/imageRefs";
 
 interface SpacesState {
   spaces: Space[];
@@ -129,6 +131,10 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
     const updated = [...existingSpaces, newSpace];
     set({ spaces: updated });
     localStorage.setItem("spaces", JSON.stringify(updated));
+    await confirmImages(normalizeImageIds(space.image_ids, space.image_id), {
+      metadataKey: "space_id",
+      metadataValue: data[0].id,
+    });
     return data[0].id;
   },
   setSpaceImageUrl: (spaceId: string, url: string) => {
@@ -155,7 +161,7 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
     }),
   removeSpace: async (id) => {
     const target = get().spaces.find((s) => s.id === id);
-    const imageId = target?.image_id;
+    const imageIds = normalizeImageIds(target?.image_ids, target?.image_id);
     // 1. Remove space members first to avoid FK or policy issues when deleting shared spaces
     const { error: memberError } = await supabase
       .from("space_members")
@@ -205,10 +211,8 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
         imageUrls: newImageUrls,
       } as Partial<SpacesState>;
     });
-    if (imageId) {
-      fetch(`/api/images/${imageId}`, { method: "DELETE" }).catch((e) => {
-        console.warn("Failed deleting image for space", imageId, e);
-      });
+    if (imageIds.length) {
+      void deleteImages(imageIds);
     }
     // NOTE: If boxes are not cascading in DB, you may need a backend function to cascade delete boxes & their images.
   },

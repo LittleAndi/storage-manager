@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { Spinner } from "@/components/ui/spinner";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
+import { getPrimaryImageId } from "@/lib/imageRefs";
 
 const Spaces: React.FC = () => {
   const spaces = useSpacesStore((state) => state.spaces);
@@ -111,8 +112,8 @@ const Spaces: React.FC = () => {
                 memberCount: (membershipCounts[s.id] || 0) + 1,
                 boxCount: s.boxCount,
                 owner: s.owner || undefined,
-                thumbnailUrl: getCachedImageUrl(s.image_id) || undefined,
-                imageId: s.image_id ?? undefined,
+                thumbnailUrl: getCachedImageUrl(getPrimaryImageId(s)) || undefined,
+                imageId: getPrimaryImageId(s),
                 isShared: false,
                 onOpen: () => navigate(`/spaces/${s.id}`),
                 onDelete: (s.boxCount ?? 0) === 0 ? () => setDeletingId(s.id) : undefined,
@@ -127,8 +128,8 @@ const Spaces: React.FC = () => {
                 memberCount: (membershipCounts[s.id] || 0) + (s.owner_id ? 1 : 0),
                 boxCount: s.boxCount,
                 owner: s.owner || undefined,
-                thumbnailUrl: getCachedImageUrl(s.image_id) || undefined,
-                imageId: s.image_id ?? undefined,
+                thumbnailUrl: getCachedImageUrl(getPrimaryImageId(s)) || undefined,
+                imageId: getPrimaryImageId(s),
                 isShared: true,
                 ownerName: s.owner || undefined,
                 role: membershipRoles[s.id],

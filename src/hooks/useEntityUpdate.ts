@@ -4,6 +4,8 @@ import { useBoxesStore } from "@/state/boxesStore";
 import { supabase } from "@/supabaseClient";
 import type { Box, Space } from "@/types/entities";
 import type { Database } from "@/types/database.types";
+import { deleteImages } from "@/lib/imageUpload";
+import { normalizeImageIds } from "@/lib/imageRefs";
 
 type TablesUpdate<T extends keyof Database["public"]["Tables"]> =
     Database["public"]["Tables"][T]["Update"];
@@ -38,34 +40,53 @@ export function useEntityUpdate<TPatch extends Record<string, unknown>>(
                     dbPatch as TablesUpdate<"spaces">,
                 ).eq("id", entity.id);
                 if (err) throw err;
+                const entityImageIds = normalizeImageIds(entity.image_ids, entity.image_id);
+                const patchHasImages = Object.prototype.hasOwnProperty.call(patch, "image_ids") || Object.prototype.hasOwnProperty.call(patch, "image_id");
+                const nextImageIds = patchHasImages
+                    ? normalizeImageIds(
+                        (patch as { image_ids?: string[] }).image_ids,
+                        (patch as { image_id?: string | null }).image_id ?? null,
+                    )
+                    : entityImageIds;
                 const updatedBase: Space = {
                     ...(entity as Space),
                     ...patch,
                 } as Space;
-                // If image_id explicitly null, remove from local object
-                const updated: Space =
-                    (Object.prototype.hasOwnProperty.call(patch, "image_id") &&
-                            (patch as { image_id?: unknown }).image_id === null)
-                        ? { ...updatedBase, image_id: undefined }
-                        : updatedBase;
+                const updated: Space = patchHasImages
+                    ? { ...updatedBase, image_id: nextImageIds[0], image_ids: nextImageIds }
+                    : updatedBase;
                 updateSpace(updated);
                 onSuccess?.(updated);
+                const removedImageIds = entityImageIds.filter((id) => !nextImageIds.includes(id));
+                if (removedImageIds.length) {
+                    void deleteImages(removedImageIds);
+                }
             } else {
                 const { error: err } = await supabase.from("boxes").update(
                     dbPatch as TablesUpdate<"boxes">,
                 ).eq("id", entity.id);
                 if (err) throw err;
+                const entityImageIds = normalizeImageIds(entity.image_ids, entity.image_id);
+                const patchHasImages = Object.prototype.hasOwnProperty.call(patch, "image_ids") || Object.prototype.hasOwnProperty.call(patch, "image_id");
+                const nextImageIds = patchHasImages
+                    ? normalizeImageIds(
+                        (patch as { image_ids?: string[] }).image_ids,
+                        (patch as { image_id?: string | null }).image_id ?? null,
+                    )
+                    : entityImageIds;
                 const updatedBase: Box = {
                     ...(entity as Box),
                     ...patch,
                 } as Box;
-                const updated: Box =
-                    (Object.prototype.hasOwnProperty.call(patch, "image_id") &&
-                            (patch as { image_id?: unknown }).image_id === null)
-                        ? { ...updatedBase, image_id: undefined }
-                        : updatedBase;
+                const updated: Box = patchHasImages
+                    ? { ...updatedBase, image_id: nextImageIds[0], image_ids: nextImageIds }
+                    : updatedBase;
                 updateBox(updated);
                 onSuccess?.(updated);
+                const removedImageIds = entityImageIds.filter((id) => !nextImageIds.includes(id));
+                if (removedImageIds.length) {
+                    void deleteImages(removedImageIds);
+                }
             }
         } catch (e) {
             setError(e);

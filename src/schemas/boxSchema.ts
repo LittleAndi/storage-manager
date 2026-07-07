@@ -11,6 +11,7 @@ export const boxFormSchema = z.object({
     ),
     // Optional image id for uploaded image (persisted instead of full URL)
     image_id: z.string().optional().or(z.literal("")),
+    image_ids: z.array(z.string()).optional(),
 });
 
 export type BoxFormValues = z.infer<typeof boxFormSchema>;

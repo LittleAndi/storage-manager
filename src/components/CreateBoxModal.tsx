@@ -5,6 +5,7 @@ import type { NewBox } from "@/types/entities";
 import { useNavigate, useParams } from "react-router-dom";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { BoxForm } from "./BoxForm";
+import { normalizeImageIds } from "@/lib/imageRefs";
 
 interface CreateBoxModalProps {
   open: boolean;
@@ -19,12 +20,14 @@ const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate
 
   const handleSubmit = async (values: BoxFormValues) => {
     if (!spaceId) return;
+    const image_ids = normalizeImageIds(values.image_ids, values.image_id);
     const newBox: NewBox = {
       name: values.name,
       location: values.location,
       space_id: spaceId,
       content: values.content,
-      image_id: values.image_id || undefined,
+      image_id: image_ids[0],
+      image_ids,
     };
     await addBox(newBox);
     if (onCreate) onCreate(values);
@@ -49,7 +52,6 @@ const CreateBoxModal: React.FC<CreateBoxModalProps> = ({ open, onClose, onCreate
         <BoxForm
           mode="create"
           open={open}
-            /* initialValues empty by design for create */
           onSubmit={handleSubmit}
           onCancel={handleClose}
         />

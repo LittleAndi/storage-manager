@@ -10,6 +10,8 @@ export interface Space {
   owner?: string | null;
   // Primary image reference (UUID key used to fetch signed URL via image API)
   image_id?: string;
+  // Multi-image support, primary image stays first in the array
+  image_ids?: string[];
   created_at?: string | null; // ISO timestamp
   modified_at?: string | null; // ISO timestamp
   boxCount?: number; // Number of boxes in this space
@@ -33,6 +35,8 @@ export interface Box {
   location?: string;
   // Primary image reference (UUID key used to fetch signed URL via image API)
   image_id?: string;
+  // Multi-image support, primary image stays first in the array
+  image_ids?: string[];
   created_at?: string | null; // ISO timestamp
   modified_at?: string | null; // ISO timestamp
   content?: string | null;

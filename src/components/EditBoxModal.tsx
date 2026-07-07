@@ -5,6 +5,8 @@ import type { Box } from "@/types/entities";
 import type { BoxFormValues } from "@/schemas/boxSchema";
 import { toast } from "sonner";
 import { BoxForm } from "./BoxForm";
+import { confirmImages } from "@/lib/imageUpload";
+import { normalizeImageIds } from "@/lib/imageRefs";
 
 interface EditBoxModalProps {
   open: boolean;
@@ -23,8 +25,8 @@ const EditBoxModal: React.FC<EditBoxModalProps> = ({ open, onClose, box }) => {
   });
 
   async function onSubmit(values: BoxFormValues) {
-    const image_id = values.image_id ? values.image_id : null;
-    await mutate({ ...values, image_id } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const image_ids = normalizeImageIds(values.image_ids, values.image_id);
+    await mutate({ ...values, image_id: image_ids[0] || null, image_ids } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     onClose();
   }
 
@@ -43,13 +45,19 @@ const EditBoxModal: React.FC<EditBoxModalProps> = ({ open, onClose, box }) => {
             location: box.location || "",
             content: box.content || "",
             image_id: box.image_id || "",
+            image_ids: box.image_ids || (box.image_id ? [box.image_id] : []),
           }}
-          existingImageId={box.image_id || null}
           onSubmit={onSubmit}
           onCancel={onClose}
           loading={loading}
           submitLabel="Save"
           includeDescriptions={false}
+          onImagesUploaded={async (results) => {
+            await confirmImages(results.map((result) => result.imageId), {
+              metadataKey: "box_id",
+              metadataValue: box.id,
+            });
+          }}
         />
       </AlertDialogContent>
     </AlertDialog>

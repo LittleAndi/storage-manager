@@ -156,10 +156,23 @@ Potential orphans:
 
 ---
 
+## DB Migrations
+
+Migrations live in `db/migrations/`. Run them against the remote database using the Supabase CLI:
+
+```powershell
+# One-time: link this project to your Supabase remote
+npx supabase link --project-ref <your-project-ref>
+
+# Apply a migration file to the remote database
+npx supabase db query --linked --file db/migrations/<migration-file>.sql
+```
+
+Always apply the migration **before** deploying new frontend/API code that depends on the schema change.
+
 ## Supabase Types
 
-```
-npm i supabase@">=2.34.3" --save-dev
+```powershell
 npx supabase login
 npx supabase gen types typescript --project-id "$PROJECT_REF" --schema public > .\src\types\database.types.ts
 ```

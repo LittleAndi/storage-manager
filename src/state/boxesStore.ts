@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { supabase } from "@/supabaseClient";
 import type { Box, NewBox } from "@/types/entities";
 import { dbBoxToAppBox, newBoxToDbBox } from "@/lib/mappers";
-import { confirmImage } from "@/lib/imageUpload";
+import { confirmImages, deleteImages } from "@/lib/imageUpload";
+import { normalizeImageIds } from "@/lib/imageRefs";
 
 interface BoxesState {
     boxes: Box[];
@@ -75,15 +76,10 @@ export const useBoxesStore = create<BoxesState>((set, get) => ({
         const updated = [...existingBoxes, newBox];
         set({ boxes: updated });
         localStorage.setItem(`boxes_${box.space_id}`, JSON.stringify(updated));
-        // Fire-and-forget confirmImage if we have an image id
-        if (newBox.image_id) {
-            confirmImage(newBox.image_id, {
-                metadataKey: "box_id",
-                metadataValue: newBox.id,
-            }).catch((e) => {
-                console.warn("confirmImage failed for box", newBox.id, e);
-            });
-        }
+        void confirmImages(normalizeImageIds(box.image_ids, box.image_id), {
+            metadataKey: "box_id",
+            metadataValue: newBox.id,
+        });
         return data[0].id;
     },
     updateBox: (box) =>
@@ -99,7 +95,7 @@ export const useBoxesStore = create<BoxesState>((set, get) => ({
         }),
     removeBox: async (id) => {
         const target = get().boxes.find(b => b.id === id);
-        const imageId = target?.image_id;
+        const imageIds = normalizeImageIds(target?.image_ids, target?.image_id);
         const { error } = await supabase.from("boxes").delete().eq("id", id);
         if (error) {
             set({ error: error.message });
@@ -108,11 +104,8 @@ export const useBoxesStore = create<BoxesState>((set, get) => ({
         }
         const updated = get().boxes.filter((b) => b.id !== id);
         set({ boxes: updated });
-        // Fire-and-forget image deletion (ignore errors so UI stays responsive)
-        if (imageId) {
-            fetch(`/api/images/${imageId}`, { method: "DELETE" }).catch(e => {
-                console.warn("Failed deleting image for box", imageId, e);
-            });
+        if (imageIds.length) {
+            void deleteImages(imageIds);
         }
     },
     setBoxImageUrl: (boxId, url) => {

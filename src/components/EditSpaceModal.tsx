@@ -2,18 +2,16 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { spaceFormSchema, type SpaceFormValues } from "@/schemas/spaceSchema";
-
-// Extend form values locally to optionally include image_id during transition.
-type SpaceFormValuesWithImage = SpaceFormValues & { image_id?: string };
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { ImageUploadField } from "@/components/forms/ImageUploadField";
-import { resolveImageUrl } from "@/lib/imageUrls";
+import { MultiImageUploadField } from "@/components/forms/MultiImageUploadField";
 import { useEntityUpdate } from "@/hooks/useEntityUpdate";
 import type { Space } from "@/types/entities";
 import { toast } from "sonner";
+import { confirmImages } from "@/lib/imageUpload";
+import { normalizeImageIds } from "@/lib/imageRefs";
 
 interface EditSpaceModalProps {
   open: boolean;
@@ -22,36 +20,15 @@ interface EditSpaceModalProps {
 }
 
 const EditSpaceModal: React.FC<EditSpaceModalProps> = ({ open, onClose, space }) => {
-  const form = useForm<SpaceFormValuesWithImage>({
+  const form = useForm<SpaceFormValues>({
     resolver: zodResolver(spaceFormSchema),
     defaultValues: {
       name: space.name,
       location: space.location || "",
       image_id: (space as unknown as { image_id?: string }).image_id || "",
+      image_ids: space.image_ids || ((space as unknown as { image_id?: string }).image_id ? [(space as unknown as { image_id?: string }).image_id as string] : []),
     },
   });
-  // Existing image preview now handled directly by ImageUploadField via form state; no local preview state needed.
-
-  React.useEffect(() => {
-    let active = true;
-    async function load() {
-      const imgId = (space as unknown as { image_id?: string }).image_id;
-      if (imgId) {
-        try {
-          const url = await resolveImageUrl(imgId);
-          if (active && url) {
-            // Prime form value so ImageUploadField shows existing image (ephemeral preview only)
-            form.setValue("edit_space_image_upload" as any, { image_id: imgId, preview_url: url }, { shouldDirty: false, shouldTouch: false }); // eslint-disable-line @typescript-eslint/no-explicit-any
-            form.setValue("image_id", imgId, { shouldDirty: false, shouldTouch: false });
-          }
-        } catch (e) {
-          console.warn("Failed to resolve existing space image", e);
-        }
-      }
-    }
-    load();
-    return () => { active = false; };
-  }, [space, form]);
 
   const { mutate, loading } = useEntityUpdate<SpaceFormValues>({
     kind: "space",
@@ -61,10 +38,9 @@ const EditSpaceModal: React.FC<EditSpaceModalProps> = ({ open, onClose, space })
   });
   const [imageUploading, setImageUploading] = React.useState(false);
 
-  async function onSubmit(values: SpaceFormValuesWithImage) {
-    // If cleared (empty string) we explicitly send null so DB sets it to null
-    const image_id = values.image_id ? values.image_id : null;
-    await mutate({ ...values, image_id } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+  async function onSubmit(values: SpaceFormValues) {
+    const image_ids = normalizeImageIds(values.image_ids, values.image_id);
+    await mutate({ ...values, image_id: image_ids[0] || null, image_ids } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     onClose();
   }
 
@@ -95,20 +71,20 @@ const EditSpaceModal: React.FC<EditSpaceModalProps> = ({ open, onClose, space })
                 <FormMessage />
               </FormItem>
             )} />
-            {/* Image upload field with single preview */}
             <FormItem>
-              <ImageUploadField
-                name="edit_space_image_upload"
-                label="Space Image"
-                description="Upload, change, or remove the space image."
-                variant="simple"
-                canClear={true}
+              <MultiImageUploadField
+                name="image_ids"
+                label="Space Images"
+                description="Upload, change, or remove space images."
                 onUploadingChange={(u) => setImageUploading(u)}
-                onUploaded={(r) => {
-                  form.setValue("image_id", r.imageId, { shouldDirty: true, shouldTouch: true });
-                }}
                 onClear={() => {
                   form.setValue("image_id", "", { shouldDirty: true, shouldTouch: true });
+                }}
+                onImagesUploaded={async (results) => {
+                  await confirmImages(results.map((result) => result.imageId), {
+                    metadataKey: "space_id",
+                    metadataValue: space.id,
+                  });
                 }}
               />
             </FormItem>
