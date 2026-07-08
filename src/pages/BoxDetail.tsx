@@ -44,7 +44,7 @@ const BoxDetail: React.FC = () => {
     );
   }
 
-  const imageIds = box.image_ids || (getPrimaryImageId(box) ? [getPrimaryImageId(box)!] : []);
+  const imageIds = box.image_ids?.length ? box.image_ids : (getPrimaryImageId(box) ? [getPrimaryImageId(box)!] : []);
 
   return (
     <AppShell>
