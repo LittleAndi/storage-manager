@@ -134,7 +134,7 @@ const SpaceDetail: React.FC = () => {
       <div className="mb-4">
         <ImageGallery
           title={`${space.name} images`}
-          imageIds={space.image_ids || (getPrimaryImageId(space) ? [getPrimaryImageId(space)!] : [])}
+          imageIds={space.image_ids?.length ? space.image_ids : (getPrimaryImageId(space) ? [getPrimaryImageId(space)!] : [])}
         />
       </div>
       <div className="mb-4 flex gap-2 flex-wrap">
