@@ -9,6 +9,7 @@ export const spaceFormSchema = z.object({
     .max(200, "Location too long"),
   // Optional image id for uploaded thumbnails (we persist this instead of the full URL)
   image_id: z.string().optional().or(z.literal("")),
+  image_ids: z.array(z.string()).optional(),
 });
 
 export type SpaceFormValues = z.infer<typeof spaceFormSchema>;

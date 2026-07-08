@@ -8,6 +8,7 @@ import type {
 } from "@/types/entities";
 import type { Database } from "@/types/database.types";
 import type { User } from "@supabase/supabase-js";
+import { normalizeImageIds } from "@/lib/imageRefs";
 
 export function dbSpaceToAppSpace(
   db: Database["public"]["Tables"]["spaces"]["Row"],
@@ -18,7 +19,8 @@ export function dbSpaceToAppSpace(
     location: db.location ?? undefined,
     owner_id: db.owner_id,
     owner: db.owner ?? undefined,
-    image_id: db.image_id ?? undefined,
+    image_id: normalizeImageIds(db.image_ids, db.image_id)[0],
+    image_ids: normalizeImageIds(db.image_ids, db.image_id),
     created_at: db.created_at,
     modified_at: db.modified_at,
   };
@@ -34,6 +36,7 @@ export function appSpaceToDbSpace(
     owner_id: space.owner_id,
     // owner is set by the database, do not send from app
     image_id: space.image_id ?? null,
+    image_ids: normalizeImageIds(space.image_ids, space.image_id),
     created_at: space.created_at,
     modified_at: space.modified_at,
   };
@@ -50,6 +53,7 @@ export function newSpaceToDbSpace(
     owner_id: space.owner_id,
     // owner is set by the database, do not send from app
     image_id: space.image_id ?? null,
+    image_ids: normalizeImageIds(space.image_ids, space.image_id),
     created_at: now,
     modified_at: now,
     // id are not included for insert
@@ -65,7 +69,8 @@ export function dbBoxToAppBox(
     space_id: db.space_id,
     name: db.name,
     location: db.location ?? undefined,
-    image_id: db.image_id ?? undefined,
+    image_id: normalizeImageIds(db.image_ids, db.image_id)[0],
+    image_ids: normalizeImageIds(db.image_ids, db.image_id),
     created_at: db.created_at,
     modified_at: db.modified_at,
     content: db.content,
@@ -81,6 +86,7 @@ export function appBoxToDbBox(
     name: box.name,
     location: box.location ?? null,
     image_id: box.image_id ?? null,
+    image_ids: normalizeImageIds(box.image_ids, box.image_id),
     created_at: box.created_at,
     modified_at: box.modified_at,
     content: box.content,
@@ -96,6 +102,7 @@ export function newBoxToDbBox(
     name: box.name,
     location: box.location ?? null,
     image_id: box.image_id ?? null,
+    image_ids: normalizeImageIds(box.image_ids, box.image_id),
     created_at: now,
     modified_at: now,
     content: box.content,

@@ -7,20 +7,20 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, For
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ImageUploadField } from "@/components/forms/ImageUploadField";
-import { resolveImageUrl } from "@/lib/imageUrls";
+import { MultiImageUploadField } from "@/components/forms/MultiImageUploadField";
+import { type UploadResult } from "@/lib/imageUpload";
 
 export interface BoxFormProps {
   mode: "create" | "edit";
   open: boolean; // to allow effect resets when modal opens/closes
-  initialValues?: Partial<BoxFormValues & { image_id: string | null }>;
-  existingImageId?: string | null; // for edit preload
+  initialValues?: Partial<BoxFormValues & { image_id: string | null; image_ids: string[] | null }>;
   onSubmit: (values: BoxFormValues) => Promise<void> | void;
   onCancel: () => void;
   loading?: boolean;
   submitLabel?: string;
   cancelLabel?: string;
   includeDescriptions?: boolean;
+  onImagesUploaded?: (results: UploadResult[]) => Promise<void> | void;
   // Allow parent to receive form ref if needed
   formRefCb?: (form: UseFormReturn<BoxFormValues>) => void;
 }
@@ -33,13 +33,13 @@ export const BoxForm: React.FC<BoxFormProps> = ({
   mode,
   open,
   initialValues,
-  existingImageId,
   onSubmit,
   onCancel,
   loading,
   submitLabel,
   cancelLabel = "Cancel",
   includeDescriptions = mode === "create",
+  onImagesUploaded,
   formRefCb,
 }) => {
   const form = useForm<BoxFormValues>({
@@ -49,6 +49,7 @@ export const BoxForm: React.FC<BoxFormProps> = ({
       location: initialValues?.location || "",
       content: initialValues?.content || "",
       image_id: initialValues?.image_id || "",
+      image_ids: initialValues?.image_ids || (initialValues?.image_id ? [initialValues.image_id] : []),
     },
   });
   const [imageUploading, setImageUploading] = React.useState(false);
@@ -64,27 +65,10 @@ export const BoxForm: React.FC<BoxFormProps> = ({
         location: initialValues?.location || "",
         content: initialValues?.content || "",
         image_id: initialValues?.image_id || "",
+        image_ids: initialValues?.image_ids || (initialValues?.image_id ? [initialValues.image_id] : []),
       });
     }
   }, [open, initialValues, form]);
-
-  // Preload existing image preview for edit mode
-  React.useEffect(() => {
-    let active = true;
-    if (mode === "edit" && existingImageId) {
-      resolveImageUrl(existingImageId)
-        .then((url) => {
-          if (!active) return;
-          if (url) {
-            // Setting a transient field name for ImageUploadField; not part of zod schema.
-            form.setValue("image_upload_ui" as any, { image_id: existingImageId, preview_url: url }, { shouldDirty: false, shouldTouch: false }); // eslint-disable-line @typescript-eslint/no-explicit-any
-            form.setValue("image_id", existingImageId, { shouldDirty: false, shouldTouch: false });
-          }
-        })
-        .catch((e) => console.warn("Failed to resolve existing box image", e));
-    }
-    return () => { active = false; };
-  }, [mode, existingImageId, form]);
 
   const handleSubmit = async (values: BoxFormValues) => {
     await onSubmit(values);
@@ -124,19 +108,15 @@ export const BoxForm: React.FC<BoxFormProps> = ({
           </FormItem>
         )} />
         <div>
-          <ImageUploadField
-            name="image_upload_ui"
-            label={mode === "create" ? "Box Image (optional)" : "Box Image"}
-            description={mode === "create" ? "Upload an optional image for this box." : "Upload, change, or remove the box image."}
-            variant="simple"
-            canClear={mode === "edit"}
+          <MultiImageUploadField
+            name="image_ids"
+            label={mode === "create" ? "Box Images (optional)" : "Box Images"}
+            description={mode === "create" ? "Upload one or more optional images for this box." : "Upload, change, or remove box images."}
             onUploadingChange={(u) => setImageUploading(u)}
-            onUploaded={(r) => {
-              form.setValue("image_id", r.imageId, { shouldDirty: true, shouldTouch: true });
-            }}
             onClear={() => {
               form.setValue("image_id", "", { shouldDirty: true, shouldTouch: true });
             }}
+            onImagesUploaded={onImagesUploaded}
           />
         </div>
         <div className="sticky bottom-0 bg-background pt-2 flex gap-2 justify-end">

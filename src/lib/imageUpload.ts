@@ -77,6 +77,31 @@ export async function confirmImage(
     return true;
 }
 
+export async function confirmImages(
+    imageIds: string[],
+    options?: ConfirmOptions,
+): Promise<void> {
+    const uniqueIds = Array.from(new Set(imageIds.filter((id) => !!id)));
+    await Promise.all(
+        uniqueIds.map((imageId) =>
+            confirmImage(imageId, options).catch((e) =>
+                console.warn("confirmImages: failed for", imageId, e),
+            )
+        ),
+    );
+}
+
+export async function deleteImages(imageIds: string[]): Promise<void> {
+    const uniqueIds = Array.from(new Set(imageIds.filter((id) => !!id)));
+    await Promise.all(
+        uniqueIds.map((imageId) =>
+            fetch(`/api/images/${encodeURIComponent(imageId)}`, {
+                method: "DELETE",
+            }).catch(() => undefined)
+        ),
+    );
+}
+
 // New response element per blob
 export interface ImageBlobInfo {
     name: string; // blob name without extension

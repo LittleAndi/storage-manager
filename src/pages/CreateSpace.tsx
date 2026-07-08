@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { ImageUploadField } from "@/components/forms/ImageUploadField";
+import { MultiImageUploadField } from "@/components/forms/MultiImageUploadField";
 import {
   Form,
   FormField,
@@ -21,9 +21,10 @@ import { useAuthStore } from "@/state/authStore";
 import { useNavigate } from "react-router-dom";
 
 import { spaceFormSchema, type SpaceFormValues } from "@/schemas/spaceSchema";
+import { normalizeImageIds } from "@/lib/imageRefs";
 
 const CreateSpace: React.FC = () => {
-  const form = useForm<SpaceFormValues>({ resolver: zodResolver(spaceFormSchema), defaultValues: { name: "", location: "", image_id: "" } });
+  const form = useForm<SpaceFormValues>({ resolver: zodResolver(spaceFormSchema), defaultValues: { name: "", location: "", image_id: "", image_ids: [] } });
   const { handleSubmit, formState: { isSubmitting }, reset } = form;
   const navigate = useNavigate();
   const addSpace = useSpacesStore(state => state.addSpace);
@@ -31,33 +32,17 @@ const CreateSpace: React.FC = () => {
   const onSubmit = async (data: SpaceFormValues) => {
     // Save to local state and Supabase
     const owner_id = useAuthStore.getState().user!.id;
+    const image_ids = normalizeImageIds(data.image_ids, data.image_id);
     const newSpace: NewSpace = {
       name: data.name,
       location: data.location,
       // Persist the image id (if uploaded) instead of the full URL
-      image_id: data.image_id || undefined,
+      image_id: image_ids[0],
+      image_ids,
       owner_id,
     };
     const id = await addSpace(newSpace);
     if (id) {
-      // If an image was uploaded, confirm it by adding metadata linking it to this space
-      if (data.image_id) {
-        try {
-          // Confirm image by updating metadata on the image resource
-          const confirmResp = await fetch(`/api/images/${encodeURIComponent(data.image_id)}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ metadata_key: "space_id", metadata_value: id }),
-          });
-          if (!confirmResp.ok) {
-            console.error("Failed to confirm image", await confirmResp.text());
-            toast.error("Image confirmation failed (metadata). The space was created though.");
-          }
-        } catch (err) {
-          console.error("Error confirming image:", err);
-          toast.error("Image confirmation failed (network). The space was created though.");
-        }
-      }
       toast.success("Space created successfully!");
       reset();
       navigate(`/spaces/${id}`);
@@ -65,8 +50,6 @@ const CreateSpace: React.FC = () => {
       toast.error("Failed to create space.");
     }
   };
-
-  // Removed inline upload logic in favor of shared ImageUploadField
 
   return (
     <AppShell>
@@ -103,16 +86,11 @@ const CreateSpace: React.FC = () => {
                 )}
               />
               <FormItem>
-                <ImageUploadField
-                  name="space_image_upload"
-                  label="Space Image (optional)"
-                  description="Upload an optional image for this space."
-                  variant="simple"
+                <MultiImageUploadField
+                  name="image_ids"
+                  label="Space Images (optional)"
+                  description="Upload one or more optional images for this space."
                   onUploadingChange={(u) => setImageUploading(u)}
-                  onUploaded={(r) => {
-                    form.setValue("image_id", r.imageId, { shouldDirty: true, shouldTouch: true });
-                    toast.success("Image uploaded");
-                  }}
                 />
               </FormItem>
             </CardContent>

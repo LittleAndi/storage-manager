@@ -1,5 +1,7 @@
 import {
     confirmImage,
+    confirmImages,
+    deleteImages,
     getImageUrls,
     ImageUploadError,
     uploadAndMaybeConfirm,
@@ -150,5 +152,48 @@ describe("imageUpload helper", () => {
         });
         expect(res.imageId).toBe("imgC");
         expect(confirmCalled).toBe(true);
+    });
+
+    it("confirmImages calls confirmImage for each unique id in parallel and swallows errors", async () => {
+        const calls: string[] = [];
+        mockFetch(async (input, init) => {
+            const url = input.toString();
+            if (init?.method === "PUT") {
+                if (url.includes("bad-id")) {
+                    return new Response("server error", { status: 500 });
+                }
+                calls.push(url.split("/").pop()!);
+                return new Response(JSON.stringify({ message: "ok" }), { status: 200 });
+            }
+            return new Response("not found", { status: 404 });
+        });
+        // Should not throw even though "bad-id" fails
+        await expect(
+            confirmImages(["id-a", "id-b", "id-a", "bad-id"], {
+                metadataKey: "space_id",
+                metadataValue: "space1",
+            }),
+        ).resolves.toBeUndefined();
+        // Deduplication: id-a only called once
+        expect(calls.filter((c) => c === "id-a").length).toBe(1);
+        expect(calls.filter((c) => c === "id-b").length).toBe(1);
+    });
+
+    it("deleteImages sends DELETE for each unique id and ignores errors", async () => {
+        const deleted: string[] = [];
+        mockFetch(async (input, init) => {
+            if (init?.method === "DELETE") {
+                const id = input.toString().split("/").pop()!;
+                if (id === "fail-id") return new Response("error", { status: 500 });
+                deleted.push(id);
+                return new Response(JSON.stringify({ deleted: true }), { status: 200 });
+            }
+            return new Response("not found", { status: 404 });
+        });
+        await expect(
+            deleteImages(["del-a", "del-b", "del-a", "fail-id"]),
+        ).resolves.toBeUndefined();
+        expect(deleted.filter((d) => d === "del-a").length).toBe(1);
+        expect(deleted.filter((d) => d === "del-b").length).toBe(1);
     });
 });

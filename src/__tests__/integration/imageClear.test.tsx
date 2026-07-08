@@ -5,9 +5,11 @@ import EditSpaceModal from "@/components/EditSpaceModal";
 import EditBoxModal from "@/components/EditBoxModal";
 import type { Space, Box } from "@/types/entities";
 
-// Mock resolveImageUrl so that the edit modals preload an existing image
+// Mock imageUrls so that edit modals and MultiImageUploadField can resolve previews
 vi.mock("@/lib/imageUrls", () => ({
   resolveImageUrl: vi.fn().mockResolvedValue("https://cdn/existing.jpg"),
+  getCachedImageUrl: vi.fn().mockReturnValue(undefined),
+  prefetchImageUrls: vi.fn().mockResolvedValue({}),
 }));
 
 // Spy for mutate calls from useEntityUpdate

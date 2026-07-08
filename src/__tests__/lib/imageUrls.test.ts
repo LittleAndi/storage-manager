@@ -79,6 +79,7 @@ describe("imageUrls caching + resolution", () => {
         const spy2 = vi.spyOn(imageUpload, "getImageUrls").mockResolvedValue({
             d: { thumbnail: "u/d_t", original: "u/d_o", blobs: [] },
         });
+        spy2.mockClear();
         const res = await prefetchImageUrls(["c", "d"]);
         expect(res).toEqual({ d: "u/d_t" });
         // Only new id fetched
@@ -93,6 +94,7 @@ describe("imageUrls caching + resolution", () => {
         const spy2 = vi.spyOn(imageUpload, "getImageUrls").mockResolvedValue({
             missing: { thumbnail: "later-url", blobs: [], original: undefined },
         });
+        spy2.mockClear();
         const url2 = await resolveImageUrl("missing", { variant: "thumbnail" });
         expect(url2).toBe("later-url");
         expect(spy).toHaveBeenCalledTimes(1);
