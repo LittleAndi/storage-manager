@@ -41,9 +41,13 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
         async function sync() {
             const currentImageIds = imageIdsRef.current;
             if (!currentImageIds.length) return;
-            const thumbs = await prefetchImageUrls(currentImageIds, { variant: "thumbnail" });
-            if (cancelled) return;
-            setPreviewUrls((current) => ({ ...current, ...thumbs }));
+            try {
+                const thumbs = await prefetchImageUrls(currentImageIds, { variant: "thumbnail" });
+                if (cancelled) return;
+                setPreviewUrls((current) => ({ ...current, ...thumbs }));
+            } catch (e) {
+                console.warn("ImageGallery: failed to prefetch thumbnails", e);
+            }
         }
         void sync();
         return () => {
