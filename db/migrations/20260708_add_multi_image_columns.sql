@@ -1,6 +1,7 @@
 -- Add multi-image support while keeping legacy single-image columns during rollout.
 
 ALTER TABLE public.spaces
+  ADD COLUMN IF NOT EXISTS image_id uuid,
   ADD COLUMN IF NOT EXISTS image_ids uuid[] DEFAULT '{}'::uuid[];
 
 ALTER TABLE public.boxes

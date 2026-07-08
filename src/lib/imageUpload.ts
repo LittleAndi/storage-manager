@@ -82,9 +82,13 @@ export async function confirmImages(
     options?: ConfirmOptions,
 ): Promise<void> {
     const uniqueIds = Array.from(new Set(imageIds.filter((id) => !!id)));
-    for (const imageId of uniqueIds) {
-        await confirmImage(imageId, options);
-    }
+    await Promise.all(
+        uniqueIds.map((imageId) =>
+            confirmImage(imageId, options).catch((e) =>
+                console.warn("confirmImages: failed for", imageId, e),
+            )
+        ),
+    );
 }
 
 export async function deleteImages(imageIds: string[]): Promise<void> {

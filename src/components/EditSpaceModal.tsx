@@ -39,7 +39,7 @@ const EditSpaceModal: React.FC<EditSpaceModalProps> = ({ open, onClose, space })
   const [imageUploading, setImageUploading] = React.useState(false);
 
   async function onSubmit(values: SpaceFormValues) {
-    const image_ids = normalizeImageIds(values.image_ids, values.image_id);
+    const image_ids = normalizeImageIds(values.image_ids);
     await mutate({ ...values, image_id: image_ids[0] || null, image_ids } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     onClose();
   }

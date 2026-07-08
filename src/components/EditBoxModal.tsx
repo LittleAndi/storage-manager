@@ -25,7 +25,7 @@ const EditBoxModal: React.FC<EditBoxModalProps> = ({ open, onClose, box }) => {
   });
 
   async function onSubmit(values: BoxFormValues) {
-    const image_ids = normalizeImageIds(values.image_ids, values.image_id);
+    const image_ids = normalizeImageIds(values.image_ids);
     await mutate({ ...values, image_id: image_ids[0] || null, image_ids } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     onClose();
   }

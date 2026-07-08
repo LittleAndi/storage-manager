@@ -131,7 +131,7 @@ export const useSpacesStore = create<SpacesState>((set, get) => ({
     const updated = [...existingSpaces, newSpace];
     set({ spaces: updated });
     localStorage.setItem("spaces", JSON.stringify(updated));
-    await confirmImages(normalizeImageIds(space.image_ids, space.image_id), {
+    void confirmImages(normalizeImageIds(space.image_ids, space.image_id), {
       metadataKey: "space_id",
       metadataValue: data[0].id,
     });

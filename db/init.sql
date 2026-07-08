@@ -7,7 +7,7 @@ CREATE TABLE spaces (
   name text NOT NULL,
   location text,
   owner_id uuid not null default auth.uid (),
-  thumbnail_url text,
+  image_id uuid,
   image_ids uuid[] DEFAULT '{}'::uuid[],
   created_at timestamptz DEFAULT now(),
   modified_at timestamptz DEFAULT now(),
