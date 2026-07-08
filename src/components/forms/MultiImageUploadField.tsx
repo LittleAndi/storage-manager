@@ -58,9 +58,13 @@ export const MultiImageUploadField: React.FC<MultiImageUploadFieldProps> = ({
             setPreviewUrls(next);
             const missing = currentImageIds.filter((imageId) => !next[imageId]);
             if (!missing.length) return;
-            const fetched = await prefetchImageUrls(missing);
-            if (cancelled) return;
-            setPreviewUrls((current) => ({ ...current, ...fetched }));
+            try {
+                const fetched = await prefetchImageUrls(missing);
+                if (cancelled) return;
+                setPreviewUrls((current) => ({ ...current, ...fetched }));
+            } catch (e) {
+                console.warn("MultiImageUploadField: failed to prefetch previews", e);
+            }
         }
         void syncPreviews();
         return () => {
