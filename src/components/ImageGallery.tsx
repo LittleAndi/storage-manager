@@ -15,13 +15,16 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
 }) => {
     const imageIdsKey = imageIds.join("|");
     const imageIdsRef = React.useRef(imageIds);
-    imageIdsRef.current = imageIds;
     const [activeImageId, setActiveImageId] = React.useState<string | null>(
         imageIds[0] ?? null,
     );
     const [lightboxOpen, setLightboxOpen] = React.useState(false);
     const [previewUrls, setPreviewUrls] = React.useState<Record<string, string>>({});
     const [originalUrls, setOriginalUrls] = React.useState<Record<string, string>>({});
+
+    React.useEffect(() => {
+        imageIdsRef.current = imageIds;
+    });
 
     React.useEffect(() => {
         const currentImageIds = imageIdsRef.current;
