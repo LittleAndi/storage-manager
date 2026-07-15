@@ -30,6 +30,8 @@ export const MultiImageUploadField: React.FC<MultiImageUploadFieldProps> = ({
 }) => {
     const { setValue, watch } = useFormContext();
     const inputRef = React.useRef<HTMLInputElement | null>(null);
+    const itemRefs = React.useRef<Map<string, HTMLDivElement>>(new Map());
+    const [pendingScrollId, setPendingScrollId] = React.useState<string | null>(null);
     const imageIds = ((watch(name) as string[] | undefined) ?? []).filter(
         (id): id is string => typeof id === "string" && id.length > 0,
     );
@@ -72,6 +74,15 @@ export const MultiImageUploadField: React.FC<MultiImageUploadFieldProps> = ({
         };
     }, [imageIdsKey]);
 
+    React.useEffect(() => {
+        if (!pendingScrollId) return;
+        const el = itemRefs.current.get(pendingScrollId);
+        if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            setPendingScrollId(null);
+        }
+    }, [pendingScrollId, imageIdsKey]);
+
     const setImages = React.useCallback(
         (nextIds: string[]) => {
             setValue(name as any, nextIds as any, { shouldDirty: true, shouldTouch: true }); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -104,6 +115,9 @@ export const MultiImageUploadField: React.FC<MultiImageUploadFieldProps> = ({
                 new Set([...imageIds, ...uploads.map((result) => result.imageId)]),
             );
             setImages(nextIds);
+            if (uploads.length > 0) {
+                setPendingScrollId(uploads[0].imageId);
+            }
             await onImagesUploaded?.(uploads);
         } catch (err) {
             setError((err as Error).message || "Upload failed");
@@ -192,7 +206,11 @@ export const MultiImageUploadField: React.FC<MultiImageUploadFieldProps> = ({
                         return (
                             <div
                                 key={imageId}
-                                className="rounded-xl border border-border bg-card p-2 space-y-2"
+                                ref={(el) => {
+                                    if (el) itemRefs.current.set(imageId, el);
+                                    else itemRefs.current.delete(imageId);
+                                }}
+                                className="rounded-xl border border-border bg-card p-2 space-y-2 scroll-mt-2 scroll-mb-16"
                             >
                                 <div className="relative overflow-hidden rounded-lg bg-muted aspect-[4/3]">
                                     {src ? (
