@@ -55,7 +55,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Layout body */}
       <div className="flex flex-1">
         {/* Desktop sidebar */}
-        <aside className="hidden md:flex md:flex-col md:w-52 md:shrink-0 bg-sidebar border-r border-sidebar-border">
+        <aside className="hidden md:flex md:flex-col md:w-52 md:shrink-0 md:fixed md:top-14 md:left-0 md:bottom-0 md:z-30 bg-sidebar border-r border-sidebar-border md:overflow-y-auto">
           <nav className="p-3 flex flex-col gap-0.5" aria-label="Main navigation">
             {navLinks.map((link) => {
               const active = isActive(link.href);
@@ -78,7 +78,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 min-w-0 pb-20 md:pb-0">
+        <main className="flex-1 min-w-0 pb-20 md:pb-0 md:ml-52">
           <div className="max-w-4xl mx-auto px-4 py-6">{children}</div>
         </main>
       </div>
