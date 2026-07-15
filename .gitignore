@@ -64,3 +64,4 @@ dist-ssr
 *.sw?
 .agents/
 .github/skills/impeccable
+.claude/
