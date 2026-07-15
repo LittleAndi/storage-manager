@@ -49,15 +49,18 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
   useEffect(() => {
     if (!imageId || resolvedUrl || thumbnailUrl || !visible) return;
     let cancelled = false;
-    setErroredThumb(false);
-    resolveImageUrl(imageId)
-      .then((u) => {
+    (async () => {
+      setErroredThumb(false);
+      try {
+        const u = await resolveImageUrl(imageId);
         if (!cancelled && u) {
           setResolvedUrl(u);
           try { setSpaceImageUrl(imageId, u); } catch { /* ignore */ }
         }
-      })
-      .catch(() => { if (!cancelled) setErroredThumb(true); });
+      } catch {
+        if (!cancelled) setErroredThumb(true);
+      }
+    })();
     return () => { cancelled = true; };
   }, [visible, imageId, resolvedUrl, thumbnailUrl, setSpaceImageUrl]);
 

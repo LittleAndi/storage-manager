@@ -37,10 +37,13 @@ export const MultiImageUploadField: React.FC<MultiImageUploadFieldProps> = ({
     );
     const imageIdsKey = imageIds.join("|");
     const imageIdsRef = React.useRef(imageIds);
-    imageIdsRef.current = imageIds;
     const [uploading, setUploading] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [previewUrls, setPreviewUrls] = React.useState<Record<string, string>>({});
+
+    React.useEffect(() => {
+        imageIdsRef.current = imageIds;
+    });
 
     React.useEffect(() => {
         let cancelled = false;
