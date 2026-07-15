@@ -46,13 +46,13 @@ const EditSpaceModal: React.FC<EditSpaceModalProps> = ({ open, onClose, space })
 
   return (
     <AlertDialog open={open} onOpenChange={onClose}>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-h-[90svh] sm:max-h-[85vh] overflow-hidden flex flex-col">
         <AlertDialogHeader>
           <AlertDialogTitle>Edit Space</AlertDialogTitle>
           <AlertDialogDescription />
         </AlertDialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto pr-1 -mr-1 flex-1">
             <FormField name="name" render={({ field }) => (
               <FormItem>
                 <FormLabel>Name</FormLabel>
@@ -88,7 +88,7 @@ const EditSpaceModal: React.FC<EditSpaceModalProps> = ({ open, onClose, space })
                 }}
               />
             </FormItem>
-            <AlertDialogFooter>
+            <AlertDialogFooter className="sticky bottom-0 bg-background pt-2">
               <Button
                 type="submit"
                 disabled={loading || imageUploading}
