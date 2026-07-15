@@ -5,10 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.Formats.Webp;
+using NetVips;
 
 public class UploadImage(ILogger<UploadImage> log)
 {
@@ -46,36 +43,22 @@ public class UploadImage(ILogger<UploadImage> log)
             // Read entire upload into memory once
             using var originalBuffer = new MemoryStream();
             await file.CopyToAsync(originalBuffer);
-            originalBuffer.Position = 0;
+            byte[] uploadedBytes = originalBuffer.ToArray();
 
-            // Decode original to ImageSharp Image object
-            originalBuffer.Position = 0;
-            using Image image = await Image.LoadAsync(originalBuffer);
-            // Apply EXIF orientation so images are stored correctly regardless of source orientation
-            image.Mutate(x => x.AutoOrient());
-            IImageFormat? decodedFormat = image.Metadata.DecodedImageFormat; // original detected format (for metadata only)
-
-            // We will ALWAYS store as WebP (lossy) for both original-sized image and thumbnail.
-            // Decide quality settings:
-            var webpOriginalEncoder = new WebpEncoder
-            {
-                Quality = 90, // higher quality for the preserved-size original
-                Method = WebpEncodingMethod.BestQuality
-            };
-            var webpThumbEncoder = new WebpEncoder
-            {
-                Quality = 80,
-                Method = WebpEncodingMethod.Default // use default method for faster encode
-            };
+            // Decode original and apply EXIF orientation so images are stored correctly regardless of source orientation
+            using Image image = Image.NewFromBuffer(uploadedBytes).Autorot();
+            // original detected format (for metadata only), e.g. "jpegload_buffer" -> "jpeg"
+            string decodedFormat = image.Contains("vips-loader")
+                ? ((string)image.Get("vips-loader")).Replace("load_buffer", string.Empty)
+                : "unknown";
 
             // Blob names (fixed extensions now)
             string originalBlobName = $"{imageId}/{imageId}-original.webp";
             string thumbnailBlobName = $"{imageId}/{imageId}-thumbnail.webp";
 
-            // Encode full-size (no resize) as WebP
-            using var webpOriginalStream = new MemoryStream();
-            await image.SaveAsync(webpOriginalStream, webpOriginalEncoder);
-            webpOriginalStream.Position = 0;
+            // We will ALWAYS store as WebP (lossy) for both original-sized image and thumbnail.
+            // Encode full-size (no resize) as WebP — higher quality/effort for the preserved-size original
+            using var webpOriginalStream = new MemoryStream(image.WebpsaveBuffer(q: 90, effort: 6));
 
             var originalBlobClient = containerClient.GetBlobClient(originalBlobName);
             await originalBlobClient.UploadAsync(
@@ -91,7 +74,7 @@ public class UploadImage(ILogger<UploadImage> log)
                     {
                         ["status"] = "unconfirmed",
                         ["source_ext"] = suppliedExtension ?? string.Empty,
-                        ["source_format"] = decodedFormat?.Name ?? "unknown",
+                        ["source_format"] = decodedFormat,
                         ["type"] = "original"
                     }
                 });
@@ -101,16 +84,10 @@ public class UploadImage(ILogger<UploadImage> log)
             // Create thumbnail (4:3 landscape crop) then encode as WebP.
             // 480×360 covers a 4-column card grid on a 1440px screen at 1× and a
             // 2-column grid on a 375px mobile at 2× (Retina), without being wasteful.
-            using var thumbnailImage = image.Clone(ctx =>
-                ctx.Resize(new ResizeOptions
-                {
-                    Size = new Size(480, 360),
-                    Mode = ResizeMode.Crop
-                }));
-
-            using var thumbnailStream = new MemoryStream();
-            await thumbnailImage.SaveAsync(thumbnailStream, webpThumbEncoder);
-            thumbnailStream.Position = 0;
+            // Thumbnail directly from the source bytes so libvips can shrink-on-load
+            // instead of resizing the already-decoded full-size bitmap.
+            using var thumbnailImage = Image.ThumbnailBuffer(uploadedBytes, 480, height: 360, crop: Enums.Interesting.Centre);
+            using var thumbnailStream = new MemoryStream(thumbnailImage.WebpsaveBuffer(q: 80));
 
             var thumbnailBlobClient = containerClient.GetBlobClient(thumbnailBlobName);
             await thumbnailBlobClient.UploadAsync(

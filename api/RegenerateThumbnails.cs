@@ -4,9 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Webp;
-using SixLabors.ImageSharp.Processing;
+using NetVips;
 
 /// <summary>
 /// One-time admin utility: re-generates thumbnails for all existing images at the
@@ -51,8 +49,6 @@ public class RegenerateThumbnails(ILogger<RegenerateThumbnails> log)
         int processed = 0, skipped = 0, failed = 0;
         var failures = new List<string>();
 
-        var encoder = new WebpEncoder { Quality = 80, Method = WebpEncodingMethod.Default };
-
         // Enumerate all blobs; filter to originals only.
         await foreach (var item in containerClient.GetBlobsAsync(
             traits: BlobTraits.Metadata, states: BlobStates.None, prefix: "", cancellationToken: default))
@@ -78,18 +74,13 @@ public class RegenerateThumbnails(ILogger<RegenerateThumbnails> log)
                 // Download original
                 var originalClient = containerClient.GetBlobClient(originalName);
                 using var download = await originalClient.OpenReadAsync();
-                using var img = await Image.LoadAsync(download);
+                using var downloadBuffer = new MemoryStream();
+                await download.CopyToAsync(downloadBuffer);
 
-                // Re-encode thumbnail at 480×360 (4:3 landscape crop)
-                using var thumb = img.Clone(ctx => ctx.Resize(new ResizeOptions
-                {
-                    Size = new Size(480, 360),
-                    Mode = ResizeMode.Crop,
-                }));
-
-                using var ms = new MemoryStream();
-                await thumb.SaveAsync(ms, encoder);
-                ms.Position = 0;
+                // Re-encode thumbnail at 480×360 (4:3 landscape crop). Thumbnail directly from
+                // the downloaded bytes so libvips can shrink-on-load instead of decoding full-size first.
+                using var thumb = Image.ThumbnailBuffer(downloadBuffer.ToArray(), 480, height: 360, crop: Enums.Interesting.Centre);
+                using var ms = new MemoryStream(thumb.WebpsaveBuffer(q: 80));
 
                 var thumbClient = containerClient.GetBlobClient(thumbnailName);
 
