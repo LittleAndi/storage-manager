@@ -1,0 +1,30 @@
+version: 2
+updates:
+  # Routine minor/patch bumps are grouped into one low-risk PR per week.
+  # Major version bumps are deliberately left ungrouped - each gets its
+  # own PR, since those are the ones that tend to need real scrutiny
+  # (breaking config changes, license changes, etc.), not a blanket merge.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      npm-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "nuget"
+    directory: "/api"
+    schedule:
+      interval: "weekly"
+    groups:
+      nuget-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
