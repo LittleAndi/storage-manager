@@ -41,7 +41,7 @@ public class GetImageUrls(ILogger<GetImageUrls> log)
         {
             var blobPrefix = $"{imageId}/";
             var blobsForImage = new List<object>();
-            await foreach (var blobItem in containerClient.GetBlobsAsync(traits: Azure.Storage.Blobs.Models.BlobTraits.Metadata, prefix: blobPrefix))
+            await foreach (var blobItem in containerClient.GetBlobsAsync(traits: Azure.Storage.Blobs.Models.BlobTraits.Metadata, states: Azure.Storage.Blobs.Models.BlobStates.None, prefix: blobPrefix, cancellationToken: default))
             {
                 var blobClient = containerClient.GetBlobClient(blobItem.Name);
 
