@@ -22,22 +22,32 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
+    // Vite 8 builds with Rolldown by default. Rolldown's rollupOptions is an
+    // alias kept only for compatibility, and the object form of
+    // `output.manualChunks` is no longer supported (Rollup-only). Use
+    // Rolldown's native `rolldownOptions.output.codeSplitting.groups` API
+    // instead: https://rolldown.rs/in-depth/manual-code-splitting
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          react: ["react", "react-dom", "react-router-dom"],
-          forms: ["react-hook-form", "@hookform/resolvers", "zod"],
-          ui: [
-            "@radix-ui/react-alert-dialog",
-            "@radix-ui/react-avatar",
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-icons",
-            "@radix-ui/react-label",
-            "@radix-ui/react-select",
-            "@radix-ui/react-slot",
-            "lucide-react",
+        codeSplitting: {
+          groups: [
+            {
+              name: "react",
+              test: /[\\/]node_modules[\\/](react|react-dom|react-router-dom)[\\/]/,
+            },
+            {
+              name: "forms",
+              test: /[\\/]node_modules[\\/](react-hook-form|@hookform[\\/]resolvers|zod)[\\/]/,
+            },
+            {
+              name: "ui",
+              test: /[\\/]node_modules[\\/](@radix-ui[\\/]react-alert-dialog|@radix-ui[\\/]react-avatar|@radix-ui[\\/]react-dialog|@radix-ui[\\/]react-icons|@radix-ui[\\/]react-label|@radix-ui[\\/]react-select|@radix-ui[\\/]react-slot|lucide-react)[\\/]/,
+            },
+            {
+              name: "data",
+              test: /[\\/]node_modules[\\/](@supabase[\\/]supabase-js|zustand)[\\/]/,
+            },
           ],
-          data: ["@supabase/supabase-js", "zustand"],
         },
       },
     },
