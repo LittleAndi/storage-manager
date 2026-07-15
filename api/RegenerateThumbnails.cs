@@ -55,7 +55,7 @@ public class RegenerateThumbnails(ILogger<RegenerateThumbnails> log)
 
         // Enumerate all blobs; filter to originals only.
         await foreach (var item in containerClient.GetBlobsAsync(
-            traits: BlobTraits.Metadata, prefix: ""))
+            traits: BlobTraits.Metadata, states: BlobStates.None, prefix: "", cancellationToken: default))
         {
             item.Metadata.TryGetValue("type", out var blobType);
             if (blobType != "original") { skipped++; continue; }

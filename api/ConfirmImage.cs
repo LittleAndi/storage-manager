@@ -48,7 +48,7 @@ public class ConfirmImage(ILogger<ConfirmImage> log)
         var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
 
         var blobPrefix = $"{imageId}/";
-        await foreach (var blobItem in containerClient.GetBlobsAsync(prefix: blobPrefix))
+        await foreach (var blobItem in containerClient.GetBlobsAsync(traits: Azure.Storage.Blobs.Models.BlobTraits.None, states: Azure.Storage.Blobs.Models.BlobStates.None, prefix: blobPrefix, cancellationToken: default))
         {
             var blobClient = containerClient.GetBlobClient(blobItem.Name);
 

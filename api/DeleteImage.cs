@@ -33,7 +33,7 @@ public class DeleteImage(ILogger<DeleteImage> log)
             var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
             var prefix = imageId + "/";
             int deleted = 0;
-            await foreach (var blob in containerClient.GetBlobsAsync(prefix: prefix))
+            await foreach (var blob in containerClient.GetBlobsAsync(traits: Azure.Storage.Blobs.Models.BlobTraits.None, states: Azure.Storage.Blobs.Models.BlobStates.None, prefix: prefix, cancellationToken: default))
             {
                 try
                 {
