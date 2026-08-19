@@ -52,9 +52,9 @@
       },
       "Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore": {
         "type": "Direct",
-        "requested": "[2.1.0, )",
-        "resolved": "2.1.0",
-        "contentHash": "mVspzNJnTeeJg9k0Le8ca+38VSvNOrUlssZ6I0JFqLL+SC37qRlonJXVGU+eU2k6XSwnjkGEkdZxmkuwwZxDBw==",
+        "requested": "[2.1.1, )",
+        "resolved": "2.1.1",
+        "contentHash": "GrgsfLuJOlWGPVY3liqlZn9ZqQEI2/2h5jyNUqfvEanRq3hAw5PzzOdMED+iBCSDHZ33zOJjCEb+HJX5aOS0wg==",
         "dependencies": {
           "Microsoft.Azure.Functions.Worker": "2.1.0",
           "Microsoft.Azure.Functions.Worker.Extensions.Abstractions": "1.3.0",
@@ -64,12 +64,12 @@
       },
       "Microsoft.Azure.Functions.Worker.Sdk": {
         "type": "Direct",
-        "requested": "[2.0.7, )",
-        "resolved": "2.0.7",
-        "contentHash": "plvT3R5Zr9oY3PSTaNDhIrzwUlcXaZqW1/hrob0gEjKjR8qxZ6Ktp9TBnEe1ObwqM45k7zIWM3Ptz6dQ29iInA==",
+        "requested": "[2.1.0, )",
+        "resolved": "2.1.0",
+        "contentHash": "qjp2ZADEQErBB2GFVnCYj+n5WuzIFcG2sq/DWn/twt9BycjHQmMTjwVCbSE1wsFBCVv6nQ2TlAiqWlmjokwUjA==",
         "dependencies": {
           "Microsoft.Azure.Functions.Worker.Sdk.Analyzers": "1.2.2",
-          "Microsoft.Azure.Functions.Worker.Sdk.Generators": "1.3.6"
+          "Microsoft.Azure.Functions.Worker.Sdk.Generators": "1.4.0"
         }
       },
       "NetVips": {
@@ -80,20 +80,20 @@
       },
       "NetVips.Native": {
         "type": "Direct",
-        "requested": "[8.18.4, )",
-        "resolved": "8.18.4",
-        "contentHash": "1jGEH7s2T6KLfmnJX121TtYCyQ32+DOD/VcygzOqJTlkD63ug6DWatp9wb1DI1dN7y7iIzed7Wt2l+Q/vPWz2Q==",
+        "requested": "[8.18.5, )",
+        "resolved": "8.18.5",
+        "contentHash": "IP2tJlq+WND7PCEOJFuqQdTXyivs5U8Ap8dfZ9vMMOr7iL7kG5umsTwkWMVb3ECjT2ya1RXOKlpt+yTPzYeSwg==",
         "dependencies": {
-          "NetVips.Native.linux-arm": "8.18.4",
-          "NetVips.Native.linux-arm64": "8.18.4",
-          "NetVips.Native.linux-musl-arm64": "8.18.4",
-          "NetVips.Native.linux-musl-x64": "8.18.4",
-          "NetVips.Native.linux-x64": "8.18.4",
-          "NetVips.Native.osx-arm64": "8.18.4",
-          "NetVips.Native.osx-x64": "8.18.4",
-          "NetVips.Native.win-arm64": "8.18.4",
-          "NetVips.Native.win-x64": "8.18.4",
-          "NetVips.Native.win-x86": "8.18.4"
+          "NetVips.Native.linux-arm": "8.18.5",
+          "NetVips.Native.linux-arm64": "8.18.5",
+          "NetVips.Native.linux-musl-arm64": "8.18.5",
+          "NetVips.Native.linux-musl-x64": "8.18.5",
+          "NetVips.Native.linux-x64": "8.18.5",
+          "NetVips.Native.osx-arm64": "8.18.5",
+          "NetVips.Native.osx-x64": "8.18.5",
+          "NetVips.Native.win-arm64": "8.18.5",
+          "NetVips.Native.win-x64": "8.18.5",
+          "NetVips.Native.win-x86": "8.18.5"
         }
       },
       "Azure.Core": {
@@ -270,8 +270,8 @@
       },
       "Microsoft.Azure.Functions.Worker.Sdk.Generators": {
         "type": "Transitive",
-        "resolved": "1.3.6",
-        "contentHash": "i5ZsI2gSLKWrsxEchmQ3LfQ2digJnsjceAw3KEVq4w1Pl8JnbOJbLCROuMaN8qv23NNs1CBP5G8LO4r3+uNm3Q=="
+        "resolved": "1.4.0",
+        "contentHash": "HDUsB9QPTDv12i6yUkGl/8rKVcRE+O2y5+Vuk5GnKbqmi6sNS4QGsBFEVB/advjktJmuynllB4aS0HKhAOgifw=="
       },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
@@ -646,53 +646,53 @@
       },
       "NetVips.Native.linux-arm": {
         "type": "Transitive",
-        "resolved": "8.18.4",
-        "contentHash": "KwiCZwiZ7eoZM3bDWMNLWuKoe32HzyqpyiFnQqkhKvok9qicJXpifRW/MsyftnMDccfBYt3gqIjz55zSIsk/ug=="
+        "resolved": "8.18.5",
+        "contentHash": "Hl7dGY8uXVKOXCNX++vw6lkobNH71aKrfbKhXp2drxEXASa8z8JbTAqxeYurMzkuVLlz649b07OPtIkx40PtgA=="
       },
       "NetVips.Native.linux-arm64": {
         "type": "Transitive",
-        "resolved": "8.18.4",
-        "contentHash": "7GPa6SEUg1MQFf9v8inNdooFVkhIBit5MsSHRVVbNSIoeggONhXV1uZ5QBytKSxnuupngckAADi42DDynYz18Q=="
+        "resolved": "8.18.5",
+        "contentHash": "sDlW4nTM7PiPU6y/YDFiP+IiXWj7Up46UT66dvFey3RAY4ErW2PnCl6wiAx8s+UFAlGFCR1sT3PazU0EsoxQuQ=="
       },
       "NetVips.Native.linux-musl-arm64": {
         "type": "Transitive",
-        "resolved": "8.18.4",
-        "contentHash": "92zFDA5V7O3LshuChVJDa4xZdUD0Mw1oh+iI1w3mIh63vN7akGLao9pVV9bdDCBu8h01w2l/NJxqbW6FfQox3g=="
+        "resolved": "8.18.5",
+        "contentHash": "gU02o/RMBzYDrlBj5Z/OEkI4/ANvMxbcoXW6OmWIZVxYb29DuDyOjqLYRBPdJWI9ZtQfKn/lOIKxVzfgo2HXjQ=="
       },
       "NetVips.Native.linux-musl-x64": {
         "type": "Transitive",
-        "resolved": "8.18.4",
-        "contentHash": "v31wNji0E4n10JUrfta4BHoJVqNa2IinOgnwyM1HytHfzKV0YbwJkwR+6KMym8481GosJ2rqgyVhUJOOABAp+w=="
+        "resolved": "8.18.5",
+        "contentHash": "csMs8dT5vHgG6CwxmGOAwnsRz0TX01cUOfQkdpQE7qVRlCmLoqe8YCkJIYH1kU6+EUlo8xgiK2LRz+2HWU0Xwg=="
       },
       "NetVips.Native.linux-x64": {
         "type": "Transitive",
-        "resolved": "8.18.4",
-        "contentHash": "Xak3RxcEayDjz+teVU2lVDxBIs8c93vEqR8nRQKFoFaj/gFSJBrx0jb+rEuighRauwKzumfjk4KINwWw6R/d8w=="
+        "resolved": "8.18.5",
+        "contentHash": "KIvw4y+dstzHRihvxiBt2qRgBpjhCdMI9pbaMTwxi4EBYvEQyrZf4gtAxk0JKeurkdwwTE2S3VGiU6GvMxpbIA=="
       },
       "NetVips.Native.osx-arm64": {
         "type": "Transitive",
-        "resolved": "8.18.4",
-        "contentHash": "+J02bPB29Uyxf2zWRKl7ApkspFBzpTFJdWSV02990yVqx2EMHrYLJeswhgcA7nYwmAW0JgV9qaIsXgr4STLnZQ=="
+        "resolved": "8.18.5",
+        "contentHash": "Nws4/cuW3PJpo5qnObn4N3N4fdYPDng7cQ8VzeHHeUT0WRY0LuNwMKsPJ3klfupqJj/LUXvzDlXOvQpAsFpR9g=="
       },
       "NetVips.Native.osx-x64": {
         "type": "Transitive",
-        "resolved": "8.18.4",
-        "contentHash": "B1LdTVZGebaooIc/A+JuIhGU7v/yhmpn8wNPbW8zB9cZPTtebqaiOefdNTZTm3LR1cxO1WP+vIaBg4RJNb0m6Q=="
+        "resolved": "8.18.5",
+        "contentHash": "m9UX6Xu5BwZ8tj+kZKzOiEzMj35om5oVishaaI22ktnIBWA5bGTcBDgGiZsBrAUOEB+75xVpzbMK+tLt7dxYlg=="
       },
       "NetVips.Native.win-arm64": {
         "type": "Transitive",
-        "resolved": "8.18.4",
-        "contentHash": "x3ZLgeMX3y9YoN2x584Y4FAKjetb0Vca9vEE6Sdao22Ucc+U0qcYr+S/zPO7CRpSKW/mOazvH9ajLzo9tcnSwg=="
+        "resolved": "8.18.5",
+        "contentHash": "RlF+Rwd/QqZkSgkYEHMyJNtAAj+eFAxfH1ZXIiQzEPo46bbFjncIXpbJQ4Somn0jB5S9OU3D8ylXVCgKPHh8GQ=="
       },
       "NetVips.Native.win-x64": {
         "type": "Transitive",
-        "resolved": "8.18.4",
-        "contentHash": "k6IpFlsf6Od0A0OQP+x7hoY7fWr7lldGOudXLIsxm3JRwnkR8qwm9krJZySbTXJPHXqVgN1P3QcAAgjfWTBGjQ=="
+        "resolved": "8.18.5",
+        "contentHash": "70NrVjtVxImUJvq8z2qQ1qxcAbhu7wEzep9K97MU+vPjezMUwMp7P9LzvDrxxVDGYNLI7e/wQKpijvLDn8GZ9w=="
       },
       "NetVips.Native.win-x86": {
         "type": "Transitive",
-        "resolved": "8.18.4",
-        "contentHash": "8+G1GwMZcADnwNacbjIV95RkN+MqE1fNuhvVKIPfXJ4KYptd4updoXz1nK5MZK8zqkvmlSn6fwA0HLoX5kACxA=="
+        "resolved": "8.18.5",
+        "contentHash": "PG1Z1uK23nZ0uiKtBJDoGJB8QUVfMTHjjpzJiG5FuvH2mpvMoDDEAfliOafzDP7T1He9AlFD8XANSXemFGcxXQ=="
       },
       "System.ClientModel": {
         "type": "Transitive",
